@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#075E54"/>
+  <title>Akash - Upload Leads</title>
+  <style>
+    :root{--bg:#e5ddd5;--card:#fff;--line:#2f3937;--btnbg:#d8eee4;--btnline:#8ea598;--text:#1f2d2a;--wa:#075E54}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{position:fixed;top:0;left:0;right:0;background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;z-index:10}
+    .page{max-width:1100px;margin:auto;padding:110px 18px 40px}
+    .advisorBox{width:320px;max-width:100%;margin:0 auto 38px;background:#fff;border:2px solid var(--line);border-radius:22px;text-align:center;padding:28px 18px;font-size:22px;font-weight:800}
+    .bigBox{background:#fff;border:2px solid var(--line);border-radius:34px;min-height:240px;padding:38px 30px;font-size:26px;line-height:1.55;max-width:100%}
+    .uploadWrap{margin-top:28px}
+    .fileInput{display:block;width:100%;max-width:520px;padding:16px;background:#fff;border:2px solid var(--line);font-size:16px}
+    .status{margin-top:16px;font-size:16px;font-weight:700;color:#45645d}
+    .btnRow{display:flex;justify-content:center;gap:60px;flex-wrap:wrap;margin-top:40px}
+    .btn{min-width:260px;padding:18px 24px;border:2px solid var(--btnline);border-radius:16px;background:var(--btnbg);font-size:20px;font-weight:900;color:#1f2d2a;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.08)}
+    @media (max-width:700px){
+      .bigBox{font-size:18px;padding:24px 18px;border-radius:24px;min-height:unset}
+      .advisorBox{font-size:18px;padding:20px 14px}
+      .btnRow{gap:18px}
+      .btn{min-width:180px;font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Akash at your Service</div>
+
+  <div class="page">
+    <div id="advisorName" class="advisorBox">Advisor Name</div>
+
+    <div class="bigBox">
+      <div id="messageBox"></div>
+
+      <div class="uploadWrap">
+        <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
+        <div id="statusText" class="status"></div>
+      </div>
+    </div>
+
+    <div class="btnRow">
+      <button id="uploadBtn" class="btn">Upload Lead Supernova</button>
+      <button id="backBtn" class="btn">Back</button>
+    </div>
+  </div>
+
+  <script>
+    const AKASH_API_BASE = localStorage.getItem("AKASH_API_BASE") || "http://187.127.130.105:3000";
+    const params = new URLSearchParams(window.location.search);
+    const advisorName = params.get("name") || "Advisor Name";
+    const advisorId = params.get("advisorId") || params.get("userId") || "";
+    const userName = params.get("userName") || params.get("managerName") || sessionStorage.getItem("userName") || localStorage.getItem("userName") || "";
+
+    document.getElementById("advisorName").textContent = advisorName;
+    document.getElementById("messageBox").innerHTML =
+      `Hi ${userName || "there"}! “Goal Setting” is already done, if you just upload the Lead Supernova excel, I can give you daily recommendations for targeting leads and making calls.<br><br>Tap the “Upload Lead Supernova” Button to Proceed.`;
+
+    document.getElementById("uploadBtn").onclick = async () => {
+      const fileInput = document.getElementById("fileInput");
+      const statusText = document.getElementById("statusText");
+
+      if (!advisorId) {
+        statusText.textContent = "Advisor ID missing.";
+        return;
+      }
+
+      if (!fileInput.files || !fileInput.files[0]) {
+        statusText.textContent = "Please choose an Excel file first.";
+        return;
+      }
+
+      try {
+        statusText.textContent = "Uploading lead file...";
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        const res = await fetch(`${AKASH_API_BASE}/api/upload-leads/${encodeURIComponent(advisorId)}`, {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.details || "Upload failed");
+        }
+
+        statusText.textContent = `${data.message || "Upload successful"} (${data.insertedCount || 0} leads)`;
+
+        setTimeout(() => {
+          const nextUrl = new URL("akash-choice.html", window.location.href);
+          nextUrl.searchParams.set("name", advisorName);
+          nextUrl.searchParams.set("advisorId", advisorId);
+          if (userName) nextUrl.searchParams.set("userName", userName);
+          window.location.href = nextUrl.toString();
+        }, 900);
+      } catch (e) {
+        statusText.textContent = e.message || "Upload failed.";
+      }
+    };
+
+    document.getElementById("backBtn").onclick = () => history.back();
+  </script>
+</body>
+</html>

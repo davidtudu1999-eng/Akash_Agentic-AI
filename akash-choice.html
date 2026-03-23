@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#075E54"/>
+  <title>Akash - Choice</title>
+  <style>
+    :root{--bg:#e5ddd5;--card:#fff;--line:#2f3937;--btnbg:#d8eee4;--btnline:#8ea598;--text:#1f2d2a;--wa:#075E54}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{position:fixed;top:0;left:0;right:0;background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;z-index:10}
+    .page{max-width:1000px;margin:auto;padding:110px 18px 40px}
+    .advisorBox{width:320px;max-width:100%;margin:0 auto 38px;background:#fff;border:2px solid var(--line);border-radius:22px;text-align:center;padding:28px 18px;font-size:22px;font-weight:800}
+    .bigBox{background:#fff;border:2px solid var(--line);border-radius:28px;min-height:130px;padding:32px 24px;font-size:24px;line-height:1.5;max-width:100%;margin-bottom:36px}
+    .btnRow{display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
+    .btn{min-width:220px;padding:18px 24px;border:2px solid var(--btnline);border-radius:16px;background:var(--btnbg);font-size:20px;font-weight:900;color:#1f2d2a;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.08)}
+    @media (max-width:700px){
+      .bigBox{font-size:18px;padding:22px 18px}
+      .advisorBox{font-size:18px;padding:20px 14px}
+      .btn{min-width:170px;font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Akash at your Service</div>
+
+  <div class="page">
+    <div id="advisorName" class="advisorBox">Advisor Name</div>
+
+    <div id="messageBox" class="bigBox"></div>
+
+    <div class="btnRow">
+      <button id="freshBtn" class="btn">Fresh Leads</button>
+      <button id="followBtn" class="btn">Follow-Ups</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const advisorName = params.get("name") || "Advisor Name";
+    const advisorId = params.get("advisorId") || params.get("userId") || "";
+    const userName = params.get("userName") || params.get("managerName") || sessionStorage.getItem("userName") || localStorage.getItem("userName") || "";
+
+    document.getElementById("advisorName").textContent = advisorName;
+    document.getElementById("messageBox").innerHTML =
+      `What would you prefer for ${advisorName} today?`;
+
+    function buildUrl(page) {
+      const url = new URL(page, window.location.href);
+      url.searchParams.set("name", advisorName);
+      if (advisorId) url.searchParams.set("advisorId", advisorId);
+      if (userName) url.searchParams.set("userName", userName);
+      return url.toString();
+    }
+
+    document.getElementById("freshBtn").onclick = () => {
+      window.location.href = buildUrl("akash-fresh-leads.html");
+    };
+
+    document.getElementById("followBtn").onclick = () => {
+      window.location.href = buildUrl("akash-followups.html");
+    };
+  </script>
+</body>
+</html>
