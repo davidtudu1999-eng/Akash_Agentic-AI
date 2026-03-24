@@ -455,8 +455,8 @@
     });
 
     document.getElementById("askAkashBtn").addEventListener("click", () => {
-      startAkashConversation();
-    });
+  window.location.href = buildAdvisorUrl("akash-chat.html");
+});
 
     document.getElementById("backBtn").addEventListener("click", () => {
       history.back();
