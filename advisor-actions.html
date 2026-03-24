@@ -96,7 +96,6 @@
       color:#45645d;
       margin-top:-16px;
     }
-
     .aiPanel{
       display:none;
       width:100%;
@@ -156,7 +155,6 @@
     .aiBusy.show{
       display:block;
     }
-
     @media (max-width: 760px){
       .grid{
         grid-template-columns:1fr;
@@ -214,15 +212,13 @@
 
   <script>
     const APPS_SCRIPT_URL =
-      localStorage.getItem("SCRIPT_URL") ||
       "https://script.google.com/macros/s/AKfycbxZ9Kpu0wpj8ONHE4FTOmeHigxt_wdhh3K97RWXTQ8mqjz9Hl6Er-iXJff-qu62kMtZHw/exec";
 
     const AKASH_API_BASE =
-      localStorage.getItem("AKASH_API_BASE") ||
       "https://api.tarachatbots.in";
 
     const AKASH_AI_WEBHOOK =
-      "http://api.tarachatbots.in/api/akash-ai";
+      "https://api.tarachatbots.in/api/akash-ai";
 
     const params = new URLSearchParams(window.location.search);
     const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
@@ -239,7 +235,6 @@
     const aiMessage = document.getElementById("aiMessage");
     const aiButtons = document.getElementById("aiButtons");
     const aiBusy = document.getElementById("aiBusy");
-    const loadingText = document.getElementById("loadingText");
 
     advisorNameEl.textContent = advisorName;
 
@@ -304,7 +299,8 @@
       });
 
       if (!res.ok) {
-        throw new Error("Unable to reach Akash AI");
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Unable to reach Akash AI");
       }
 
       return res.json();
@@ -458,7 +454,7 @@
       }
     });
 
-    document.getElementById("askAkashBtn").addEventListener("click", async () => {
+    document.getElementById("askAkashBtn").addEventListener("click", () => {
       startAkashConversation();
     });
 
