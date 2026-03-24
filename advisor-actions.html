@@ -38,6 +38,7 @@
       gap:34px;
       padding-left:18px;
       padding-right:18px;
+      padding-bottom:40px;
     }
     .nameCard{
       margin-top:22px;
@@ -95,6 +96,67 @@
       color:#45645d;
       margin-top:-16px;
     }
+
+    .aiPanel{
+      display:none;
+      width:100%;
+      max-width:760px;
+      background:transparent;
+      margin-top:-10px;
+    }
+    .aiPanel.show{
+      display:block;
+    }
+    .aiMessage{
+      background:var(--card);
+      border:2px solid var(--btnBorder);
+      border-radius:22px;
+      padding:22px 20px;
+      font-size:22px;
+      line-height:1.55;
+      font-weight:500;
+      margin-bottom:22px;
+      box-shadow:0 1px 0 rgba(0,0,0,.04);
+      white-space:pre-wrap;
+    }
+    .aiButtons{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px 18px;
+      justify-content:center;
+    }
+    .chatBtn{
+      border:2px solid var(--btnBorder);
+      border-radius:18px;
+      background:var(--btn1);
+      color:var(--text);
+      font-weight:800;
+      font-size:18px;
+      padding:16px 18px;
+      cursor:pointer;
+      box-shadow:0 4px 0 rgba(0,0,0,.06);
+      min-width:180px;
+      display:none;
+    }
+    .chatBtn.show{
+      display:inline-block;
+    }
+    .chatBtn:active{
+      transform:translateY(1px);
+      box-shadow:0 3px 0 rgba(0,0,0,.06);
+    }
+    .aiBusy{
+      display:none;
+      text-align:center;
+      font-size:15px;
+      font-weight:700;
+      color:#45645d;
+      margin-top:6px;
+    }
+    .aiBusy.show{
+      display:block;
+    }
+
     @media (max-width: 760px){
       .grid{
         grid-template-columns:1fr;
@@ -107,6 +169,17 @@
       .nameCard{
         min-width:0;
         width:100%;
+      }
+      .aiMessage{
+        font-size:18px;
+      }
+      .chatBtn{
+        width:100%;
+        min-width:0;
+      }
+      .aiButtons{
+        flex-direction:column;
+        align-items:stretch;
       }
     }
   </style>
@@ -124,6 +197,12 @@
       <button id="dailyTrackingBtn" class="actionBtn">Daily Tracking</button>
     </div>
 
+    <div id="aiPanel" class="aiPanel">
+      <div id="aiMessage" class="aiMessage">Hi, I am Akash!</div>
+      <div id="aiButtons" class="aiButtons"></div>
+      <div id="aiBusy" class="aiBusy">Akash is thinking...</div>
+    </div>
+
     <div class="grid bottom">
       <button id="backBtn" class="actionBtn">Back</button>
       <button id="advisorListBtn" class="actionBtn">Advisor's List</button>
@@ -134,15 +213,36 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = localStorage.getItem("SCRIPT_URL") || "https://script.google.com/macros/s/AKfycbxZ9Kpu0wpj8ONHE4FTOmeHigxt_wdhh3K97RWXTQ8mqjz9Hl6Er-iXJff-qu62kMtZHw/exec";
-    const AKASH_API_BASE = "https://api.tarachatbots.in";
+    const APPS_SCRIPT_URL =
+      localStorage.getItem("SCRIPT_URL") ||
+      "https://script.google.com/macros/s/AKfycbxZ9Kpu0wpj8ONHE4FTOmeHigxt_wdhh3K97RWXTQ8mqjz9Hl6Er-iXJff-qu62kMtZHw/exec";
+
+    const AKASH_API_BASE =
+      localStorage.getItem("AKASH_API_BASE") ||
+      "https://api.tarachatbots.in";
+
+    const AKASH_AI_WEBHOOK =
+      localStorage.getItem("AKASH_AI_WEBHOOK") ||
+      "http://187.127.130.105:5678/webhook/akash-ai";
 
     const params = new URLSearchParams(window.location.search);
     const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
     const advisorId = params.get("userId") || params.get("advisorId") || "";
-    const userName = params.get("userName") || params.get("managerName") || sessionStorage.getItem("userName") || localStorage.getItem("userName") || "";
+    const userName =
+      params.get("userName") ||
+      params.get("managerName") ||
+      sessionStorage.getItem("userName") ||
+      localStorage.getItem("userName") ||
+      "";
 
-    document.getElementById("advisorName").textContent = advisorName;
+    const advisorNameEl = document.getElementById("advisorName");
+    const aiPanel = document.getElementById("aiPanel");
+    const aiMessage = document.getElementById("aiMessage");
+    const aiButtons = document.getElementById("aiButtons");
+    const aiBusy = document.getElementById("aiBusy");
+    const loadingText = document.getElementById("loadingText");
+
+    advisorNameEl.textContent = advisorName;
 
     function buildAdvisorUrl(page) {
       const url = new URL(page, window.location.href);
@@ -166,6 +266,148 @@
       return res.json();
     }
 
+    function showAIPanel() {
+      aiPanel.classList.add("show");
+      aiPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function setAIBusy(flag) {
+      aiBusy.classList.toggle("show", !!flag);
+    }
+
+    function clearAIButtons() {
+      aiButtons.innerHTML = "";
+    }
+
+    function renderAIResponse(response) {
+      aiMessage.textContent = response.message || "Akash is ready.";
+      clearAIButtons();
+
+      const buttons = Array.isArray(response.buttons) ? response.buttons : [];
+      buttons.forEach((btn, index) => {
+        const button = document.createElement("button");
+        button.className = "chatBtn";
+        button.textContent = btn.label || btn.value || "Continue";
+        button.onclick = () => handleAIButtonClick(btn.value || btn.action || "");
+        aiButtons.appendChild(button);
+
+        setTimeout(() => {
+          button.classList.add("show");
+        }, index * 220);
+      });
+    }
+
+    async function callAI(payload) {
+      const res = await fetch(AKASH_AI_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error("Unable to reach Akash AI");
+      }
+
+      return res.json();
+    }
+
+    async function startAkashConversation() {
+      try {
+        if (!advisorId) {
+          alert("Advisor ID missing in page link.");
+          return;
+        }
+
+        showAIPanel();
+        setAIBusy(true);
+        clearAIButtons();
+        aiMessage.textContent = "Hi, I am Akash!";
+
+        const response = await callAI({
+          stage: "language-selection",
+          language: "",
+          advisorName,
+          advisorId,
+          userName
+        });
+
+        renderAIResponse(response);
+      } catch (e) {
+        alert(e.message || "Unable to start Akash AI.");
+      } finally {
+        setAIBusy(false);
+      }
+    }
+
+    async function handleAIButtonClick(value) {
+      try {
+        if (!value) return;
+
+        const languageValues = [
+          "english", "hindi", "hinglish", "marathi",
+          "bengali", "tamil", "telugu", "assamese"
+        ];
+
+        if (languageValues.includes(value)) {
+          localStorage.setItem("akash_language", value);
+
+          setAIBusy(true);
+          clearAIButtons();
+
+          const state = await fetchAkashState();
+
+          let stage = "fresh-or-followups";
+          if (!state.goalDone) {
+            stage = "goal-setting-required";
+          } else if (state.goalDone && !state.leadUploaded) {
+            stage = "upload-required";
+          }
+
+          const response = await callAI({
+            stage,
+            language: value,
+            advisorName: state.advisorName || advisorName,
+            advisorId,
+            userName,
+            goalDone: !!state.goalDone,
+            leadUploaded: !!state.leadUploaded
+          });
+
+          renderAIResponse(response);
+          return;
+        }
+
+        if (value === "goal_setting") {
+          window.location.href = buildAdvisorUrl("goal-setting.html");
+          return;
+        }
+
+        if (value === "upload_lead_supernova") {
+          window.location.href = buildAdvisorUrl("akash-upload-leads.html");
+          return;
+        }
+
+        if (value === "fresh_leads") {
+          window.location.href = buildAdvisorUrl("akash-fresh-leads.html");
+          return;
+        }
+
+        if (value === "followups") {
+          window.location.href = buildAdvisorUrl("akash-followups.html");
+          return;
+        }
+
+        if (value === "back") {
+          aiPanel.classList.remove("show");
+          return;
+        }
+      } catch (e) {
+        alert(e.message || "Unable to continue Akash flow.");
+      } finally {
+        setAIBusy(false);
+      }
+    }
+
     document.getElementById("goalSettingBtn").addEventListener("click", () => {
       window.location.href = buildAdvisorUrl("goal-setting.html");
     });
@@ -180,6 +422,7 @@
           action: "getAdvisorPhone",
           advisorName: advisorName
         });
+
         if (!result.ok || !result.phone) {
           alert(result.message || "Unable to fetch phone number.");
           return;
@@ -217,32 +460,7 @@
     });
 
     document.getElementById("askAkashBtn").addEventListener("click", async () => {
-      const loading = document.getElementById("loadingText");
-      try {
-        loading.style.display = "block";
-        const state = await fetchAkashState();
-
-        if (state.nextPage === "goal-setting-required") {
-          window.location.href = buildAdvisorUrl("akash-goal-required.html");
-          return;
-        }
-
-        if (state.nextPage === "upload-lead-supernova") {
-          window.location.href = buildAdvisorUrl("akash-upload-leads.html");
-          return;
-        }
-
-        if (state.nextPage === "fresh-or-followups") {
-          window.location.href = buildAdvisorUrl("akash-choice.html");
-          return;
-        }
-
-        alert("Unable to determine next Akash page.");
-      } catch (e) {
-        alert(e.message || "Unable to check Akash status.");
-      } finally {
-        loading.style.display = "none";
-      }
+      startAkashConversation();
     });
 
     document.getElementById("backBtn").addEventListener("click", () => {
