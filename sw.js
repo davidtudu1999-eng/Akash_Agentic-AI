@@ -1,4 +1,4 @@
-const CACHE_NAME = "akash-pwa-v3";
+const CACHE_NAME = "akash-pwa-v4";
 const CORE_ASSETS = [
   "./",
   "./index.html",
