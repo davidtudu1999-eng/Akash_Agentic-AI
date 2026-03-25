@@ -226,7 +226,6 @@
           clearButtons();
 
           const state = await fetchAkashState();
-          alert(JSON.stringify(state));
           const next = state.nextPage;
 
           if (next === "goal-setting-required") {
