@@ -174,7 +174,8 @@
 
         const response = await callAI({
           stage: "fresh-or-followups",
-          language,
+          language:
+            localStorage.getItem("akash_language") || "english",
           advisorName,
           advisorId,
           userName
