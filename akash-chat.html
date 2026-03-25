@@ -227,18 +227,19 @@
           clearButtons();
 
           const state = await fetchAkashState();
+          const next = state.nextPage;
 
-          if (!state.goalDone) {
+          if (next === "goal-setting-required") {
             window.location.href = buildAdvisorUrl("akash-goal-required.html");
             return;
           }
 
-          if (state.goalDone && !state.leadUploaded) {
+          if (next === "upload-required") {
             window.location.href = buildAdvisorUrl("akash-upload-leads.html");
             return;
           }
 
-          if (state.goalDone && state.leadUploaded) {
+          if (next === "fresh-or-followups") {
             window.location.href = buildAdvisorUrl("akash-choice.html");
             return;
           }
