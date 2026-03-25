@@ -12,9 +12,13 @@
     .header{position:fixed;top:0;left:0;right:0;background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;z-index:10}
     .page{max-width:1100px;margin:auto;padding:110px 18px 40px}
     .advisorBox{width:320px;max-width:100%;margin:0 auto 38px;background:#fff;border:2px solid var(--line);border-radius:22px;text-align:center;padding:28px 18px;font-size:22px;font-weight:800}
-    .bigBox{background:#fff;border:2px solid var(--line);border-radius:34px;min-height:240px;padding:38px 30px;font-size:26px;line-height:1.55;max-width:100%}
+    .bigBox{background:#fff;border:2px solid var(--line);border-radius:34px;min-height:240px;padding:38px 30px;font-size:26px;line-height:1.55;max-width:100%;white-space:pre-wrap}
     .btnRow{display:flex;justify-content:center;gap:60px;flex-wrap:wrap;margin-top:40px}
     .btn{min-width:220px;padding:18px 24px;border:2px solid var(--btnline);border-radius:16px;background:var(--btnbg);font-size:20px;font-weight:900;color:#1f2d2a;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.08)}
+    .btn.aiBtn{display:none}
+    .btn.aiBtn.show{display:inline-block}
+    .busy{display:none;text-align:center;margin-top:16px;font-size:15px;font-weight:700;color:#45645d}
+    .busy.show{display:block}
     @media (max-width:700px){
       .bigBox{font-size:18px;padding:24px 18px;border-radius:24px;min-height:unset}
       .advisorBox{font-size:18px;padding:20px 14px}
@@ -30,38 +34,118 @@
     <div id="advisorName" class="advisorBox">Advisor Name</div>
 
     <div class="bigBox">
-      <div id="messageBox"></div>
+      <div id="messageBox">Loading...</div>
     </div>
 
-    <div class="btnRow">
-      <button id="goalBtn" class="btn">Goal Setting</button>
-      <button id="backBtn" class="btn">Back</button>
-    </div>
+    <div id="btnRow" class="btnRow"></div>
+    <div id="busy" class="busy">Akash is thinking...</div>
   </div>
 
   <script>
+    const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
+
     const params = new URLSearchParams(window.location.search);
     const advisorName = params.get("name") || "Advisor Name";
     const advisorId = params.get("advisorId") || params.get("userId") || "";
-    const userName = params.get("userName") || params.get("managerName") || sessionStorage.getItem("userName") || localStorage.getItem("userName") || "";
+    const userName =
+      params.get("userName") ||
+      params.get("managerName") ||
+      sessionStorage.getItem("userName") ||
+      localStorage.getItem("userName") ||
+      "";
+
+    const language =
+      params.get("language") ||
+      localStorage.getItem("akash_language") ||
+      "english";
 
     document.getElementById("advisorName").textContent = advisorName;
-    document.getElementById("messageBox").innerHTML =
-      `Hi ${userName || "there"}! “Goal Setting” is not yet done.<br><br>Tap the “Goal Setting” Button below to complete “Goal Setting”.`;
 
     function buildUrl(page) {
       const url = new URL(page, window.location.href);
       url.searchParams.set("name", advisorName);
       if (advisorId) url.searchParams.set("advisorId", advisorId);
       if (userName) url.searchParams.set("userName", userName);
+      if (language) url.searchParams.set("language", language);
       return url.toString();
     }
 
-    document.getElementById("goalBtn").onclick = () => {
-      window.location.href = buildUrl("goal-setting.html");
-    };
+    function setBusy(flag) {
+      document.getElementById("busy").classList.toggle("show", !!flag);
+    }
 
-    document.getElementById("backBtn").onclick = () => history.back();
+    async function callAI(payload) {
+      const res = await fetch(AKASH_AI_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Unable to reach Akash AI");
+      }
+
+      return res.json();
+    }
+
+    function renderButtons(buttons) {
+      const btnRow = document.getElementById("btnRow");
+      btnRow.innerHTML = "";
+
+      (Array.isArray(buttons) ? buttons : []).forEach((btn, index) => {
+        const button = document.createElement("button");
+        button.className = "btn aiBtn";
+        button.textContent = btn.label || btn.value || "Continue";
+        button.onclick = () => handleButtonClick(btn.value || "");
+        btnRow.appendChild(button);
+
+        setTimeout(() => {
+          button.classList.add("show");
+        }, index * 180);
+      });
+    }
+
+    function handleButtonClick(value) {
+      if (value === "goal_setting") {
+        window.location.href = buildUrl("goal-setting.html");
+        return;
+      }
+
+      if (value === "back") {
+        history.back();
+        return;
+      }
+    }
+
+    async function initPage() {
+      try {
+        setBusy(true);
+
+        const response = await callAI({
+          pageType: "goal-not-done",
+          language,
+          advisorName
+        });
+
+        document.getElementById("messageBox").textContent =
+          response.message || "Goal Setting is not yet done.";
+
+        renderButtons(response.buttons);
+      } catch (e) {
+        document.getElementById("messageBox").textContent =
+          `Hi ${userName || "there"}! Goal Setting is not yet done.\n\nTap the Goal Setting button below to complete it.`;
+
+        renderButtons([
+          { label: "Goal Setting", value: "goal_setting" },
+          { label: "Back", value: "back" }
+        ]);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    initPage();
   </script>
 </body>
 </html>
