@@ -131,8 +131,17 @@
       "https://script.google.com/macros/s/AKfycbxZ9Kpu0wpj8ONHE4FTOmeHigxt_wdhh3K97RWXTQ8mqjz9Hl6Er-iXJff-qu62kMtZHw/exec";
 
     const params = new URLSearchParams(window.location.search);
-    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
-    const advisorId = params.get("userId") || params.get("advisorId") || "";
+
+    const advisorName =
+      params.get("name") ||
+      params.get("advisorName") ||
+      "Advisor Name";
+
+    const advisorId =
+      params.get("advisorId") ||
+      params.get("userId") ||
+      "";
+
     const userName =
       params.get("userName") ||
       params.get("managerName") ||
@@ -144,9 +153,20 @@
 
     function buildAdvisorUrl(page) {
       const url = new URL(page, window.location.href);
+
       url.searchParams.set("name", advisorName);
-      if (advisorId) url.searchParams.set("advisorId", advisorId);
-      if (userName) url.searchParams.set("userName", userName);
+      url.searchParams.set("advisorName", advisorName);
+
+      if (advisorId) {
+        url.searchParams.set("advisorId", advisorId);
+        url.searchParams.set("userId", advisorId);
+      }
+
+      if (userName) {
+        url.searchParams.set("userName", userName);
+        url.searchParams.set("managerName", userName);
+      }
+
       return url.toString();
     }
 
@@ -220,7 +240,11 @@
       history.back();
     });
 
-    window.SARTHI_ADVISOR_CONTEXT = { advisorName, advisorId, userName };
+    window.SARTHI_ADVISOR_CONTEXT = {
+      advisorName,
+      advisorId,
+      userName
+    };
   </script>
 </body>
 </html>
