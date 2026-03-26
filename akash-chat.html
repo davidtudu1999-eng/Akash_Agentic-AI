@@ -102,7 +102,7 @@
 
   <div class="wrap">
     <div id="advisorName" class="nameCard">Advisor Name</div>
-    <div id="aiMessage" class="aiMessage">TEST 12345</div>
+    <div id="aiMessage" class="aiMessage">Hi, I am Akash!</div>
     <div id="aiButtons" class="aiButtons"></div>
     <div id="busy" class="busy">Akash is thinking...</div>
     <button id="backBtn" class="backBtn">Back</button>
@@ -110,11 +110,11 @@
 
   <script>
     const AKASH_API_BASE = "https://api.tarachatbots.in";
-    const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
+    const AKASH_AI_WEBHOOK = "http://187.127.130.105:5678/webhook/9e9c2297-3e87-4cdf-86ee-5481bbcadc6d";
 
     const params = new URLSearchParams(window.location.search);
     const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
-    const advisorId = params.get("userId") || params.get("advisorId") || "";
+    const advisorId = params.get("advisorId") || params.get("userId") || "";
     const userName =
       params.get("userName") ||
       params.get("managerName") ||
@@ -147,12 +147,39 @@
       aiButtons.innerHTML = "";
     }
 
-    function renderAIResponse(response) {
-      aiMessage.textContent = response.message || "Akash is ready.";
+    function normalizeAIResponse(raw) {
+      let response = raw;
+
+      if (response && typeof response.output === "string") {
+        try {
+          response = JSON.parse(response.output);
+        } catch (e) {
+          response = { message: response.output };
+        }
+      }
+
+      if (!response || typeof response !== "object") {
+        response = { message: "Akash is ready." };
+      }
+
+      if (typeof response.message !== "string" || !response.message.trim()) {
+        response.message = "Akash is ready.";
+      }
+
+      if (!Array.isArray(response.buttons)) {
+        response.buttons = [];
+      }
+
+      return response;
+    }
+
+    function renderAIResponse(rawResponse) {
+      const response = normalizeAIResponse(rawResponse);
+
+      aiMessage.textContent = response.message;
       clearButtons();
 
-      const buttons = Array.isArray(response.buttons) ? response.buttons : [];
-      buttons.forEach((btn, index) => {
+      response.buttons.forEach((btn, index) => {
         const button = document.createElement("button");
         button.className = "chatBtn";
         button.textContent = btn.label || btn.value || "Continue";
@@ -190,6 +217,7 @@
     async function startConversation() {
       try {
         if (!advisorId) {
+          aiMessage.textContent = "Advisor ID missing.";
           return;
         }
 
@@ -198,9 +226,13 @@
         clearButtons();
 
         const response = await callAI({
-          stage: "language-selection",
+          pageType: "language-selection",
           language: "",
-          advisorName
+          advisorName,
+          leadName: "",
+          leadData: "",
+          selectedStatus: "",
+          messageBatchCount: 1
         });
 
         renderAIResponse(response);
@@ -233,7 +265,7 @@
             return;
           }
 
-          if (next === "upload-required") {
+          if (next === "upload-lead-supernova") {
             window.location.href = buildAdvisorUrl("akash-upload-leads.html");
             return;
           }
