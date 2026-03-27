@@ -4,12 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="theme-color" content="#075E54"/>
-  <title>Follow-Up Leads</title>
+  <title>Follow-Ups</title>
   <style>
     :root{
       --wa:#075E54;
       --bg:#e5ddd5;
-      --card:#ffffff;
       --btn1:#d8eee4;
       --btnBorder:#8ea598;
       --text:#1f2d2a;
@@ -35,42 +34,33 @@
       flex-direction:column;
       align-items:center;
       gap:28px;
-      padding-left:18px;
-      padding-right:18px;
-      padding-bottom:40px;
+      padding:18px 18px 40px;
     }
-    .nameCard{
-      margin-top:12px;
-      background:#fff;
-      border:2px solid var(--btnBorder);
-      border-radius:22px;
-      min-width:320px;
-      max-width:100%;
-      padding:26px 24px;
-      text-align:center;
-      font-size:20px;
-      font-weight:800;
-    }
-    .aiMessage{
+    .nameCard,.aiMessage,.emptyState{
       width:100%;
       max-width:860px;
       background:#fff;
       border:2px solid var(--btnBorder);
       border-radius:22px;
       padding:22px 20px;
+    }
+    .nameCard{
+      max-width:320px;
+      text-align:center;
+      font-size:20px;
+      font-weight:800;
+    }
+    .aiMessage{
       font-size:22px;
-      line-height:1.55;
-      font-weight:500;
+      line-height:1.5;
       white-space:pre-wrap;
     }
     .leadGrid{
       width:100%;
       max-width:960px;
       display:grid;
-      grid-template-columns:repeat(4, minmax(150px, 1fr));
+      grid-template-columns:repeat(4,minmax(150px,1fr));
       gap:22px 28px;
-      align-items:center;
-      justify-content:center;
     }
     .leadBtn,.backBtn{
       width:100%;
@@ -84,42 +74,14 @@
       cursor:pointer;
       box-shadow:0 4px 0 rgba(0,0,0,.06);
     }
-    .leadBtn:active,.backBtn:active{
-      transform:translateY(1px);
-      box-shadow:0 3px 0 rgba(0,0,0,.06);
-    }
-    .backWrap{
-      width:100%;
-      max-width:280px;
-      margin-top:8px;
-    }
-    .busy{
-      display:none;
-      font-size:15px;
-      font-weight:700;
-      color:#45645d;
-    }
+    .backWrap{width:100%;max-width:280px;}
+    .busy{display:none;font-size:15px;font-weight:700;color:#45645d;}
     .busy.show{display:block;}
-    .emptyState{
-      width:100%;
-      max-width:860px;
-      background:#fff;
-      border:2px dashed var(--btnBorder);
-      border-radius:22px;
-      padding:22px 20px;
-      text-align:center;
-      font-size:18px;
-      font-weight:700;
-      display:none;
-    }
+    .emptyState{display:none;text-align:center;font-weight:700;}
     .emptyState.show{display:block;}
-    @media (max-width:900px){
-      .leadGrid{
-        grid-template-columns:repeat(2, minmax(140px, 1fr));
-      }
-    }
+    @media (max-width:900px){.leadGrid{grid-template-columns:repeat(2,minmax(140px,1fr));}}
     @media (max-width:760px){
-      .nameCard{min-width:0;width:100%;}
+      .nameCard{max-width:100%;}
       .aiMessage{font-size:18px;}
       .leadGrid{grid-template-columns:1fr;max-width:360px;}
     }
@@ -127,7 +89,6 @@
 </head>
 <body>
   <div class="header">Akash at your Service</div>
-
   <div class="wrap">
     <div id="advisorName" class="nameCard">Advisor Name</div>
     <div id="aiMessage" class="aiMessage">Akash is getting today’s follow-up leads...</div>
@@ -141,11 +102,23 @@
 
   <script>
     const AKASH_API_BASE = "https://api.tarachatbots.in";
-    const NEXT_LEAD_PAGE = "akash-lead-actions.html"; // change later if needed
 
     const params = new URLSearchParams(window.location.search);
-    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
-    const advisorId = params.get("advisorId") || params.get("userId") || "";
+
+    const advisorName =
+      params.get("name") ||
+      params.get("advisorName") ||
+      sessionStorage.getItem("akash_advisor_name") ||
+      localStorage.getItem("akash_advisor_name") ||
+      "Advisor Name";
+
+    const advisorId =
+      params.get("advisorId") ||
+      params.get("userId") ||
+      sessionStorage.getItem("akash_advisor_id") ||
+      localStorage.getItem("akash_advisor_id") ||
+      "";
+
     const userName =
       params.get("userName") ||
       params.get("managerName") ||
@@ -153,29 +126,26 @@
       localStorage.getItem("userName") ||
       "";
 
-    const advisorNameEl = document.getElementById("advisorName");
+    document.getElementById("advisorName").textContent = advisorName;
+
     const aiMessageEl = document.getElementById("aiMessage");
     const busyEl = document.getElementById("busy");
     const leadGridEl = document.getElementById("leadGrid");
     const emptyStateEl = document.getElementById("emptyState");
 
-    advisorNameEl.textContent = advisorName;
-
     function setBusy(flag) {
       busyEl.classList.toggle("show", !!flag);
     }
 
-    function buildUrl(page) {
-      const url = new URL(page, window.location.href);
-      url.searchParams.set("name", advisorName);
-      if (advisorId) url.searchParams.set("advisorId", advisorId);
-      if (userName) url.searchParams.set("userName", userName);
-      const language = localStorage.getItem("akash_language");
-      if (language) url.searchParams.set("language", language);
-      return url.toString();
+    async function fetchFollowups() {
+      if (!advisorId) throw new Error("Advisor ID missing.");
+      const res = await fetch(`${AKASH_API_BASE}/api/followups/${encodeURIComponent(advisorId)}`);
+      if (!res.ok) throw new Error("Unable to fetch follow-up leads.");
+      const data = await res.json();
+      return Array.isArray(data.leads) ? data.leads : [];
     }
 
-    async function callAIForFollowupsMessage() {
+    async function fetchAIMessage() {
       const res = await fetch(`${AKASH_API_BASE}/api/akash-ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,31 +163,15 @@
         })
       });
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Unable to get follow-up leads message");
-      }
-
+      if (!res.ok) throw new Error("Unable to fetch AI message.");
       return res.json();
     }
 
-    async function fetchFollowups() {
-      if (!advisorId) throw new Error("Advisor ID missing");
-      const res = await fetch(`${AKASH_API_BASE}/api/followups/${encodeURIComponent(advisorId)}`);
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Unable to fetch follow-up leads");
-      }
-      return res.json();
-    }
-
-    function renderFollowups(payload) {
+    function renderLeads(leads) {
       leadGridEl.innerHTML = "";
       emptyStateEl.classList.remove("show");
 
-      const leads = Array.isArray(payload?.leads) ? payload.leads : [];
-
-      if (leads.length === 0) {
+      if (!Array.isArray(leads) || leads.length === 0) {
         emptyStateEl.classList.add("show");
         return;
       }
@@ -225,35 +179,12 @@
       leads.forEach((lead) => {
         const btn = document.createElement("button");
         btn.className = "leadBtn";
-        btn.textContent = lead.lead_name || lead.leadName || "Lead";
-        btn.onclick = () => handleLeadClick(lead, "followup");
+        btn.textContent = lead.lead_name || "Lead";
+        btn.onclick = () => {
+          sessionStorage.setItem("akash_selected_lead", JSON.stringify(lead));
+        };
         leadGridEl.appendChild(btn);
       });
-    }
-
-    function handleLeadClick(lead, leadSource) {
-      sessionStorage.setItem("akash_selected_lead", JSON.stringify({
-        ...lead,
-        advisorName,
-        advisorId,
-        userName,
-        leadSource
-      }));
-
-      window.location.href = buildLeadUrl(NEXT_LEAD_PAGE, lead);
-    }
-
-    function buildLeadUrl(page, lead) {
-      const url = new URL(page, window.location.href);
-      url.searchParams.set("name", advisorName);
-      if (advisorId) url.searchParams.set("advisorId", advisorId);
-      if (userName) url.searchParams.set("userName", userName);
-      if (lead?.lead_id) url.searchParams.set("leadId", lead.lead_id);
-      if (lead?.lead_name) url.searchParams.set("leadName", lead.lead_name);
-      url.searchParams.set("leadSource", "followup");
-      const language = localStorage.getItem("akash_language");
-      if (language) url.searchParams.set("language", language);
-      return url.toString();
     }
 
     async function initPage() {
@@ -267,20 +198,17 @@
 
         setBusy(true);
 
-        const [aiResponse, followupPayload] = await Promise.all([
-          callAIForFollowupsMessage().catch(() => ({
-            message: "These are your follow-up leads for today.\n\nTap on any of these to decide further course of action."
+        const [messageRes, leads] = await Promise.all([
+          fetchAIMessage().catch(() => ({
+            message: "These are your follow-up leads. Tap on any of these to decide further course of action."
           })),
           fetchFollowups()
         ]);
 
-        aiMessageEl.textContent =
-          aiResponse?.message ||
-          "These are your follow-up leads for today.\n\nTap on any of these to decide further course of action.";
-
-        renderFollowups(followupPayload);
+        aiMessageEl.textContent = messageRes.message || "These are your follow-up leads. Tap on any of these to decide further course of action.";
+        renderLeads(leads);
       } catch (e) {
-        aiMessageEl.textContent = "Unable to load follow-up leads right now.";
+        aiMessageEl.textContent = e.message || "Unable to load follow-up leads.";
         emptyStateEl.classList.add("show");
         emptyStateEl.textContent = e.message || "Unable to load follow-up leads.";
       } finally {
@@ -288,9 +216,7 @@
       }
     }
 
-    document.getElementById("backBtn").addEventListener("click", () => {
-      history.back();
-    });
+    document.getElementById("backBtn").onclick = () => history.back();
 
     initPage();
   </script>
