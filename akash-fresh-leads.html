@@ -179,6 +179,23 @@
         const btn = document.createElement("button");
         btn.className = "leadBtn";
         btn.textContent = lead.lead_name || "Lead";
+
+btn.onclick = () => {
+  sessionStorage.setItem("akash_selected_lead", JSON.stringify(lead));
+
+  const url = new URL("akash-lead-actions.html", window.location.href);
+  url.searchParams.set("name", advisorName);
+  if (advisorId) url.searchParams.set("advisorId", advisorId);
+  if (userName) url.searchParams.set("userName", userName);
+  if (lead.lead_id) url.searchParams.set("leadId", lead.lead_id);
+  if (lead.lead_name) url.searchParams.set("leadName", lead.lead_name);
+
+  const language = localStorage.getItem("akash_language");
+  if (language) url.searchParams.set("language", language);
+
+  window.location.href = url.toString();
+};
+        
         btn.onclick = () => {
           sessionStorage.setItem("akash_selected_lead", JSON.stringify(lead));
         };
