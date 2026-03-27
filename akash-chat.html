@@ -1,294 +1,178 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="theme-color" content="#075E54"/>
-  <title>Akash Chat</title>
-  <style>
-    :root{
-      --wa:#075E54;
-      --bg:#e5ddd5;
-      --card:#ffffff;
-      --btn1:#d8eee4;
-      --btnBorder:#8ea598;
-      --text:#1f2d2a;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      min-height:100vh;
-    }
-    .header{
-      position:fixed;top:0;left:0;right:0;z-index:3000;
-      background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;
-    }
-    .wrap{
-      padding-top:110px;
-      max-width:900px;
-      margin:0 auto;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:28px;
-      padding-left:18px;
-      padding-right:18px;
-      padding-bottom:40px;
-    }
-    .nameCard{
-      margin-top:22px;
-      background:#fff;
-      border:2px solid var(--btnBorder);
-      border-radius:22px;
-      min-width:320px;
-      max-width:100%;
-      padding:26px 24px;
-      text-align:center;
-      font-size:20px;
-      font-weight:800;
-    }
-    .aiMessage{
-      width:100%;
-      max-width:760px;
-      background:#fff;
-      border:2px solid var(--btnBorder);
-      border-radius:22px;
-      padding:22px 20px;
-      font-size:22px;
-      line-height:1.5;
-      font-weight:500;
-      white-space:pre-wrap;
-    }
-    .aiButtons{
-      width:100%;
-      max-width:760px;
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-    }
-    .chatBtn,.backBtn{
-      width:100%;
-      border:2px solid var(--btnBorder);
-      border-radius:18px;
-      background:var(--btn1);
-      color:var(--text);
-      font-weight:800;
-      font-size:18px;
-      padding:18px 14px;
-      cursor:pointer;
-      box-shadow:0 4px 0 rgba(0,0,0,.06);
-    }
-    .chatBtn{display:none;}
-    .chatBtn.show{display:block;}
-    .busy{
-      display:none;
-      font-size:15px;
-      font-weight:700;
-      color:#45645d;
-    }
-    .busy.show{display:block;}
-    @media (max-width:760px){
-      .aiMessage{font-size:18px;}
-      .nameCard{min-width:0;width:100%;}
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#075E54"/>
+<title>Akash Chat</title>
+
+<style>
+:root{
+  --wa:#075E54;
+  --bg:#e5ddd5;
+  --card:#ffffff;
+  --btn1:#d8eee4;
+  --btnBorder:#8ea598;
+  --text:#1f2d2a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.header{
+  position:fixed;top:0;left:0;right:0;
+  background:var(--wa);
+  color:#fff;
+  padding:20px;
+  font-weight:900;
+  font-size:26px;
+}
+.wrap{
+  padding-top:110px;
+  max-width:900px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:28px;
+  padding:20px;
+}
+.nameCard{
+  background:#fff;
+  border:2px solid var(--btnBorder);
+  border-radius:22px;
+  padding:20px;
+  font-weight:800;
+}
+.aiMessage{
+  background:#fff;
+  border:2px solid var(--btnBorder);
+  border-radius:22px;
+  padding:20px;
+  font-size:20px;
+}
+.aiButtons{
+  width:100%;
+  max-width:760px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.chatBtn{
+  border:2px solid var(--btnBorder);
+  border-radius:14px;
+  background:var(--btn1);
+  padding:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+.busy{display:none;}
+.busy.show{display:block;}
+</style>
 </head>
+
 <body>
-  <div class="header">Akash at your Service</div>
 
-  <div class="wrap">
-    <div id="advisorName" class="nameCard">Advisor Name</div>
-    <div id="aiMessage" class="aiMessage">Hi, I am Akash!</div>
-    <div id="aiButtons" class="aiButtons"></div>
-    <div id="busy" class="busy">Akash is thinking...</div>
-    <button id="backBtn" class="backBtn">Back</button>
-  </div>
+<div class="header">Akash at your Service</div>
 
-  <script>
-    const AKASH_API_BASE = "https://api.tarachatbots.in";
-    const AKASH_AI_WEBHOOK = "http://api.tarachatbots.in/api/akash-ai";
+<div class="wrap">
+  <div id="advisorName" class="nameCard"></div>
+  <div id="aiMessage" class="aiMessage">Hi, I am Akash!</div>
+  <div id="aiButtons" class="aiButtons"></div>
+  <div id="busy" class="busy">Akash is thinking...</div>
+</div>
 
-    const params = new URLSearchParams(window.location.search);
-    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
-    const advisorId = params.get("advisorId") || params.get("userId") || "";
-    const userName =
-      params.get("userName") ||
-      params.get("managerName") ||
-      sessionStorage.getItem("userName") ||
-      localStorage.getItem("userName") ||
-      "";
+<script>
 
-    const advisorNameEl = document.getElementById("advisorName");
-    const aiMessage = document.getElementById("aiMessage");
-    const aiButtons = document.getElementById("aiButtons");
-    const busy = document.getElementById("busy");
+const AKASH_API_BASE = "https://api.tarachatbots.in";
+const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
 
-    advisorNameEl.textContent = advisorName;
+const params = new URLSearchParams(window.location.search);
 
-    function buildAdvisorUrl(page) {
-      const url = new URL(page, window.location.href);
-      url.searchParams.set("name", advisorName);
-      if (advisorId) url.searchParams.set("advisorId", advisorId);
-      if (userName) url.searchParams.set("userName", userName);
-      const language = localStorage.getItem("akash_language");
-      if (language) url.searchParams.set("language", language);
-      return url.toString();
-    }
+const advisorName = params.get("name") || "Advisor";
+const advisorId = params.get("advisorId") || "";
+const userName = params.get("userName") || "";
 
-    function setBusy(flag) {
-      busy.classList.toggle("show", !!flag);
-    }
+document.getElementById("advisorName").textContent = advisorName;
 
-    function clearButtons() {
-      aiButtons.innerHTML = "";
-    }
+const aiMessage = document.getElementById("aiMessage");
+const aiButtons = document.getElementById("aiButtons");
+const busy = document.getElementById("busy");
 
-    function normalizeAIResponse(raw) {
-      let response = raw;
+function setBusy(flag){
+  busy.classList.toggle("show", flag);
+}
 
-      if (response && typeof response.output === "string") {
-        try {
-          response = JSON.parse(response.output);
-        } catch (e) {
-          response = { message: response.output };
-        }
-      }
+function clearButtons(){
+  aiButtons.innerHTML = "";
+}
 
-      if (!response || typeof response !== "object") {
-        response = { message: "Akash is ready." };
-      }
+function renderAIResponse(res){
+  aiMessage.textContent = res.message || "Akash is ready.";
+  clearButtons();
 
-      if (typeof response.message !== "string" || !response.message.trim()) {
-        response.message = "Akash is ready.";
-      }
+  (res.buttons || []).forEach(btn => {
+    const b = document.createElement("button");
+    b.className = "chatBtn";
+    b.textContent = btn.label;
+    b.onclick = () => handleClick(btn.value);
+    aiButtons.appendChild(b);
+  });
+}
 
-      if (!Array.isArray(response.buttons)) {
-        response.buttons = [];
-      }
+async function callAI(payload){
+  const res = await fetch(AKASH_AI_WEBHOOK,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
 
-      return response;
-    }
+async function startConversation(){
+  setBusy(true);
 
-    function renderAIResponse(rawResponse) {
-      const response = normalizeAIResponse(rawResponse);
+  const res = await callAI({
+    stage:"language-selection",
+    pageType:"language-selection",
+    language:"",
+    advisorName,
+    advisorId,
+    userName,
+    leadName:"",
+    leadData:"",
+    selectedStatus:"",
+    messageBatchCount:1
+  });
 
-      aiMessage.textContent = response.message;
-      clearButtons();
+  renderAIResponse(res);
+  setBusy(false);
+}
 
-      response.buttons.forEach((btn, index) => {
-        const button = document.createElement("button");
-        button.className = "chatBtn";
-        button.textContent = btn.label || btn.value || "Continue";
-        button.onclick = () => handleAIButtonClick(btn.value || "");
-        aiButtons.appendChild(button);
+async function handleClick(value){
+  if(!value) return;
 
-        setTimeout(() => {
-          button.classList.add("show");
-        }, index * 180);
-      });
-    }
+  localStorage.setItem("akash_language", value);
 
-    async function fetchAkashState() {
-      if (!advisorId) throw new Error("Advisor ID missing");
-      const res = await fetch(`${AKASH_API_BASE}/api/akash-state/${encodeURIComponent(advisorId)}`);
-      if (!res.ok) throw new Error("Unable to fetch Akash state");
-      return res.json();
-    }
+  const state = await fetch(`${AKASH_API_BASE}/api/akash-state/${advisorId}`)
+    .then(r => r.json());
 
-    async function callAI(payload) {
-      const res = await fetch(AKASH_AI_WEBHOOK, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+  if(state.nextPage === "goal-setting-required"){
+    window.location.href = "akash-goal-required.html";
+  }
+  else if(state.nextPage === "upload-lead-supernova"){
+    window.location.href = "akash-upload-leads.html";
+  }
+  else{
+    window.location.href = "akash-choice.html";
+  }
+}
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Unable to reach Akash AI");
-      }
+startConversation();
 
-      return res.json();
-    }
-
-    async function startConversation() {
-      try {
-        if (!advisorId) {
-          aiMessage.textContent = "Advisor ID missing.";
-          return;
-        }
-
-        setBusy(true);
-        aiMessage.textContent = "Hi, I am Akash!";
-        clearButtons();
-
-        const response = await callAI({
-          pageType: "language-selection",
-          language: "",
-          advisorName,
-          leadName: "",
-          leadData: "",
-          selectedStatus: "",
-          messageBatchCount: 1
-        });
-
-        renderAIResponse(response);
-      } catch (e) {
-        alert(e.message || "Unable to start Akash AI.");
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    async function handleAIButtonClick(value) {
-      try {
-        if (!value) return;
-
-        const languageValues = [
-          "english", "hindi", "hinglish", "marathi",
-          "bengali", "tamil", "telugu", "assamese"
-        ];
-
-        if (languageValues.includes(value)) {
-          localStorage.setItem("akash_language", value);
-          setBusy(true);
-          clearButtons();
-
-          const state = await fetchAkashState();
-          const next = state.nextPage;
-
-          if (next === "goal-setting-required") {
-            window.location.href = buildAdvisorUrl("akash-goal-required.html");
-            return;
-          }
-
-          if (next === "upload-lead-supernova") {
-            window.location.href = buildAdvisorUrl("akash-upload-leads.html");
-            return;
-          }
-
-          if (next === "fresh-or-followups") {
-            window.location.href = buildAdvisorUrl("akash-choice.html");
-            return;
-          }
-
-          throw new Error("Unable to determine next page");
-        }
-      } catch (e) {
-        alert(e.message || "Unable to continue Akash flow.");
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    document.getElementById("backBtn").addEventListener("click", () => {
-      history.back();
-    });
-
-    startConversation();
-  </script>
+</script>
 </body>
 </html>
