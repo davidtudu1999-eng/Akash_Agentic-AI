@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#075E54"/>
+  <title>Lead Actions</title>
+  <style>
+    :root{
+      --wa:#075E54;
+      --bg:#e5ddd5;
+      --btn1:#d8eee4;
+      --btnBorder:#8ea598;
+      --text:#1f2d2a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .header{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:3000;
+      background:var(--wa);
+      color:#fff;
+      padding:20px;
+      font-weight:900;
+      font-size:26px;
+    }
+    .wrap{
+      padding-top:110px;
+      max-width:1100px;
+      margin:0 auto;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:28px;
+      padding-left:18px;
+      padding-right:18px;
+      padding-bottom:40px;
+    }
+    .nameCard{
+      margin-top:12px;
+      background:#fff;
+      border:2px solid var(--btnBorder);
+      border-radius:22px;
+      min-width:320px;
+      max-width:100%;
+      padding:26px 24px;
+      text-align:center;
+      font-size:20px;
+      font-weight:800;
+    }
+    .aiMessage{
+      width:100%;
+      max-width:760px;
+      background:#fff;
+      border:2px solid var(--btnBorder);
+      border-radius:22px;
+      padding:22px 20px;
+      font-size:22px;
+      line-height:1.5;
+      font-weight:500;
+      white-space:pre-wrap;
+    }
+    .busy{
+      display:none;
+      font-size:15px;
+      font-weight:700;
+      color:#45645d;
+    }
+    .busy.show{display:block;}
+    .btnGrid{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns:repeat(5, minmax(150px, 1fr));
+      gap:18px 22px;
+      align-items:center;
+    }
+    .actionBtn{
+      width:100%;
+      border:2px solid var(--btnBorder);
+      border-radius:18px;
+      background:var(--btn1);
+      color:var(--text);
+      font-weight:800;
+      font-size:18px;
+      padding:18px 14px;
+      cursor:pointer;
+      box-shadow:0 4px 0 rgba(0,0,0,.06);
+    }
+    .actionBtn:active{
+      transform:translateY(1px);
+      box-shadow:0 3px 0 rgba(0,0,0,.06);
+    }
+    @media (max-width:1100px){
+      .btnGrid{
+        grid-template-columns:repeat(3, minmax(150px, 1fr));
+      }
+    }
+    @media (max-width:760px){
+      .nameCard{
+        min-width:0;
+        width:100%;
+      }
+      .aiMessage{
+        font-size:18px;
+      }
+      .btnGrid{
+        grid-template-columns:repeat(2, minmax(140px, 1fr));
+        max-width:420px;
+      }
+    }
+    @media (max-width:480px){
+      .btnGrid{
+        grid-template-columns:1fr;
+        max-width:320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Akash at your Service</div>
+
+  <div class="wrap">
+    <div id="leadNameCard" class="nameCard">Lead Name</div>
+    <div id="aiMessage" class="aiMessage">Akash is thinking...</div>
+    <div id="busy" class="busy">Akash is thinking...</div>
+
+    <div class="btnGrid">
+      <button id="marketingBtn" class="actionBtn">Marketing Material</button>
+      <button id="customBtn" class="actionBtn">Customized Message</button>
+      <button id="callBtn" class="actionBtn">Call</button>
+      <button id="statusBtn" class="actionBtn">Lead Status</button>
+      <button id="backBtn" class="actionBtn">Back</button>
+    </div>
+  </div>
+
+  <script>
+    const AKASH_API_BASE = "https://api.tarachatbots.in";
+    const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
+
+    const params = new URLSearchParams(window.location.search);
+
+    const advisorName =
+      params.get("name") ||
+      params.get("advisorName") ||
+      sessionStorage.getItem("akash_advisor_name") ||
+      localStorage.getItem("akash_advisor_name") ||
+      "Advisor Name";
+
+    const advisorId =
+      params.get("advisorId") ||
+      params.get("userId") ||
+      sessionStorage.getItem("akash_advisor_id") ||
+      localStorage.getItem("akash_advisor_id") ||
+      "";
+
+    const userName =
+      params.get("userName") ||
+      params.get("managerName") ||
+      sessionStorage.getItem("userName") ||
+      localStorage.getItem("userName") ||
+      "";
+
+    const language =
+      params.get("language") ||
+      localStorage.getItem("akash_language") ||
+      "english";
+
+    const selectedLeadRaw =
+      sessionStorage.getItem("akash_selected_lead") ||
+      localStorage.getItem("akash_selected_lead");
+
+    let selectedLead = {};
+    try {
+      selectedLead = selectedLeadRaw ? JSON.parse(selectedLeadRaw) : {};
+    } catch (e) {
+      selectedLead = {};
+    }
+
+    const leadName =
+      params.get("leadName") ||
+      selectedLead.lead_name ||
+      selectedLead.leadName ||
+      "Lead Name";
+
+    const leadId =
+      params.get("leadId") ||
+      selectedLead.lead_id ||
+      selectedLead.leadId ||
+      "";
+
+    const leadSource =
+      params.get("leadSource") ||
+      selectedLead.leadSource ||
+      "";
+
+    const leadNameCard = document.getElementById("leadNameCard");
+    const aiMessageEl = document.getElementById("aiMessage");
+    const busyEl = document.getElementById("busy");
+
+    leadNameCard.textContent = leadName;
+
+    function setBusy(flag) {
+      busyEl.classList.toggle("show", !!flag);
+    }
+
+    async function callAI(payload) {
+      const res = await fetch(AKASH_AI_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Unable to reach Akash AI");
+      }
+
+      return res.json();
+    }
+
+    async function loadAIMessage() {
+      try {
+        setBusy(true);
+
+        const response = await callAI({
+          stage: "lead-action-page",
+          pageType: "lead-action-page",
+          language,
+          advisorName,
+          advisorId,
+          userName,
+          leadName,
+          leadData: JSON.stringify({
+            leadId,
+            leadSource,
+            tier: selectedLead.tier || "",
+            status: selectedLead.status || "",
+            phone: selectedLead.phone || "",
+            email: selectedLead.email || ""
+          }),
+          selectedStatus: selectedLead.status || "",
+          messageBatchCount: 1
+        });
+
+        aiMessageEl.textContent =
+          response.message ||
+          `You are now viewing ${leadName}. Please choose the next action.`;
+      } catch (e) {
+        aiMessageEl.textContent =
+          `You are now viewing ${leadName}. Please choose the next action.`;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    document.getElementById("marketingBtn").addEventListener("click", () => {
+      alert("Marketing Material page/function to be connected next.");
+    });
+
+    document.getElementById("customBtn").addEventListener("click", () => {
+      alert("Customized Message page/function to be connected next.");
+    });
+
+    document.getElementById("callBtn").addEventListener("click", () => {
+      alert("Call function to be connected next.");
+    });
+
+    document.getElementById("statusBtn").addEventListener("click", () => {
+      alert("Lead Status page/function to be connected next.");
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      history.back();
+    });
+
+    loadAIMessage();
+  </script>
+</body>
+</html>
