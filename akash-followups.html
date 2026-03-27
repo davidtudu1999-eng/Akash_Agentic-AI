@@ -180,8 +180,6 @@
         const btn = document.createElement("button");
         btn.className = "leadBtn";
         btn.textContent = lead.lead_name || "Lead";
-btn.onclick = () => {
-  sessionStorage.setItem("akash_selected_lead", JSON.stringify(lead));
 
   const url = new URL("akash-lead-actions.html", window.location.href);
   url.searchParams.set("name", advisorName);
