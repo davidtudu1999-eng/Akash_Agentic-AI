@@ -117,18 +117,39 @@
     const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
 
     const params = new URLSearchParams(window.location.search);
-    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
-    const advisorId = params.get("advisorId") || params.get("userId") || "";
+
+    const advisorName =
+      params.get("name") ||
+      params.get("advisorName") ||
+      sessionStorage.getItem("akash_advisor_name") ||
+      localStorage.getItem("akash_advisor_name") ||
+      "Advisor Name";
+
+    const advisorId =
+      params.get("advisorId") ||
+      params.get("userId") ||
+      sessionStorage.getItem("akash_advisor_id") ||
+      localStorage.getItem("akash_advisor_id") ||
+      "";
+
     const userName =
       params.get("userName") ||
       params.get("managerName") ||
       sessionStorage.getItem("userName") ||
       localStorage.getItem("userName") ||
       "";
+
     const language =
       params.get("language") ||
       localStorage.getItem("akash_language") ||
       "english";
+
+    sessionStorage.setItem("akash_advisor_name", advisorName);
+    localStorage.setItem("akash_advisor_name", advisorName);
+    if (advisorId) {
+      sessionStorage.setItem("akash_advisor_id", advisorId);
+      localStorage.setItem("akash_advisor_id", advisorId);
+    }
 
     document.getElementById("advisorName").textContent = advisorName;
 
@@ -156,12 +177,12 @@
         const text = await res.text().catch(() => "");
         throw new Error(text || "Unable to reach Akash AI");
       }
+
       return res.json();
     }
 
     function showButtons() {
-      const ids = ["freshBtn", "followBtn", "backBtn"];
-      ids.forEach((id, index) => {
+      ["freshBtn", "followBtn", "backBtn"].forEach((id, index) => {
         setTimeout(() => {
           document.getElementById(id).classList.add("show");
         }, index * 180);
@@ -174,11 +195,15 @@
 
         const response = await callAI({
           stage: "fresh-or-followups",
-          language:
-            localStorage.getItem("akash_language") || "english",
+          pageType: "fresh-or-followups",
+          language,
           advisorName,
           advisorId,
-          userName
+          userName,
+          leadName: "",
+          leadData: "",
+          selectedStatus: "",
+          messageBatchCount: 1
         });
 
         document.getElementById("messageBox").textContent =
