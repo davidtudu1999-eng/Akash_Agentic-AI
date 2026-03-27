@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#075E54"/>
+  <title>Fresh Leads</title>
+  <style>
+    :root{
+      --wa:#075E54;
+      --bg:#e5ddd5;
+      --card:#ffffff;
+      --btn1:#d8eee4;
+      --btnBorder:#8ea598;
+      --text:#1f2d2a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .header{
+      position:fixed;top:0;left:0;right:0;z-index:3000;
+      background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;
+    }
+    .wrap{
+      padding-top:110px;
+      max-width:1000px;
+      margin:0 auto;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:28px;
+      padding-left:18px;
+      padding-right:18px;
+      padding-bottom:40px;
+    }
+    .nameCard{
+      margin-top:12px;
+      background:#fff;
+      border:2px solid var(--btnBorder);
+      border-radius:22px;
+      min-width:320px;
+      max-width:100%;
+      padding:26px 24px;
+      text-align:center;
+      font-size:20px;
+      font-weight:800;
+    }
+    .aiMessage{
+      width:100%;
+      max-width:860px;
+      background:#fff;
+      border:2px solid var(--btnBorder);
+      border-radius:22px;
+      padding:22px 20px;
+      font-size:22px;
+      line-height:1.55;
+      font-weight:500;
+      white-space:pre-wrap;
+    }
+    .leadGrid{
+      width:100%;
+      max-width:960px;
+      display:grid;
+      grid-template-columns:repeat(4, minmax(150px, 1fr));
+      gap:22px 28px;
+      align-items:center;
+      justify-content:center;
+    }
+    .leadBtn,.backBtn{
+      width:100%;
+      border:2px solid var(--btnBorder);
+      border-radius:18px;
+      background:var(--btn1);
+      color:var(--text);
+      font-weight:800;
+      font-size:18px;
+      padding:18px 14px;
+      cursor:pointer;
+      box-shadow:0 4px 0 rgba(0,0,0,.06);
+    }
+    .leadBtn:active,.backBtn:active{
+      transform:translateY(1px);
+      box-shadow:0 3px 0 rgba(0,0,0,.06);
+    }
+    .backWrap{
+      width:100%;
+      max-width:280px;
+      margin-top:8px;
+    }
+    .busy{
+      display:none;
+      font-size:15px;
+      font-weight:700;
+      color:#45645d;
+    }
+    .busy.show{display:block;}
+    .emptyState{
+      width:100%;
+      max-width:860px;
+      background:#fff;
+      border:2px dashed var(--btnBorder);
+      border-radius:22px;
+      padding:22px 20px;
+      text-align:center;
+      font-size:18px;
+      font-weight:700;
+      display:none;
+    }
+    .emptyState.show{display:block;}
+    @media (max-width:900px){
+      .leadGrid{
+        grid-template-columns:repeat(2, minmax(140px, 1fr));
+      }
+    }
+    @media (max-width:760px){
+      .nameCard{min-width:0;width:100%;}
+      .aiMessage{font-size:18px;}
+      .leadGrid{grid-template-columns:1fr;max-width:360px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Akash at your Service</div>
+
+  <div class="wrap">
+    <div id="advisorName" class="nameCard">Advisor Name</div>
+    <div id="aiMessage" class="aiMessage">Akash is getting today’s fresh leads...</div>
+    <div id="busy" class="busy">Akash is thinking...</div>
+    <div id="leadGrid" class="leadGrid"></div>
+    <div id="emptyState" class="emptyState">No fresh leads available for today.</div>
+    <div class="backWrap">
+      <button id="backBtn" class="backBtn">Back</button>
+    </div>
+  </div>
+
+  <script>
+    const AKASH_API_BASE = "https://api.tarachatbots.in";
+    const NEXT_LEAD_PAGE = "akash-lead-actions.html"; // change later if needed
+
+    const params = new URLSearchParams(window.location.search);
+    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
+    const advisorId = params.get("advisorId") || params.get("userId") || "";
+    const userName =
+      params.get("userName") ||
+      params.get("managerName") ||
+      sessionStorage.getItem("userName") ||
+      localStorage.getItem("userName") ||
+      "";
+
+    const advisorNameEl = document.getElementById("advisorName");
+    const aiMessageEl = document.getElementById("aiMessage");
+    const busyEl = document.getElementById("busy");
+    const leadGridEl = document.getElementById("leadGrid");
+    const emptyStateEl = document.getElementById("emptyState");
+
+    advisorNameEl.textContent = advisorName;
+
+    function setBusy(flag) {
+      busyEl.classList.toggle("show", !!flag);
+    }
+
+    function buildUrl(page) {
+      const url = new URL(page, window.location.href);
+      url.searchParams.set("name", advisorName);
+      if (advisorId) url.searchParams.set("advisorId", advisorId);
+      if (userName) url.searchParams.set("userName", userName);
+      const language = localStorage.getItem("akash_language");
+      if (language) url.searchParams.set("language", language);
+      return url.toString();
+    }
+
+    async function callAIForFreshLeadsMessage() {
+      const res = await fetch(`${AKASH_API_BASE}/api/akash-ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: "fresh-leads-page",
+          pageType: "fresh-leads-page",
+          language: localStorage.getItem("akash_language") || "",
+          advisorName,
+          advisorId,
+          userName,
+          leadName: "",
+          leadData: "",
+          selectedStatus: "",
+          messageBatchCount: 1
+        })
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Unable to get fresh leads message");
+      }
+
+      return res.json();
+    }
+
+    async function fetchFreshLeads() {
+      if (!advisorId) throw new Error("Advisor ID missing");
+      const res = await fetch(`${AKASH_API_BASE}/api/fresh-leads/${encodeURIComponent(advisorId)}`);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Unable to fetch fresh leads");
+      }
+      return res.json();
+    }
+
+    function renderFreshLeads(leads) {
+      leadGridEl.innerHTML = "";
+      emptyStateEl.classList.remove("show");
+
+      if (!Array.isArray(leads) || leads.length === 0) {
+        emptyStateEl.classList.add("show");
+        return;
+      }
+
+      leads.forEach((lead) => {
+        const btn = document.createElement("button");
+        btn.className = "leadBtn";
+        btn.textContent = lead.lead_name || lead.leadName || "Lead";
+        btn.onclick = () => handleLeadClick(lead, "fresh");
+        leadGridEl.appendChild(btn);
+      });
+    }
+
+    function handleLeadClick(lead, leadSource) {
+      sessionStorage.setItem("akash_selected_lead", JSON.stringify({
+        ...lead,
+        advisorName,
+        advisorId,
+        userName,
+        leadSource
+      }));
+
+      window.location.href = buildLeadUrl(NEXT_LEAD_PAGE, lead);
+    }
+
+    function buildLeadUrl(page, lead) {
+      const url = new URL(page, window.location.href);
+      url.searchParams.set("name", advisorName);
+      if (advisorId) url.searchParams.set("advisorId", advisorId);
+      if (userName) url.searchParams.set("userName", userName);
+      if (lead?.lead_id) url.searchParams.set("leadId", lead.lead_id);
+      if (lead?.lead_name) url.searchParams.set("leadName", lead.lead_name);
+      url.searchParams.set("leadSource", "fresh");
+      const language = localStorage.getItem("akash_language");
+      if (language) url.searchParams.set("language", language);
+      return url.toString();
+    }
+
+    async function initPage() {
+      try {
+        if (!advisorId) {
+          aiMessageEl.textContent = "Advisor ID missing.";
+          emptyStateEl.classList.add("show");
+          emptyStateEl.textContent = "Advisor ID missing.";
+          return;
+        }
+
+        setBusy(true);
+
+        const [aiResponse, freshLeads] = await Promise.all([
+          callAIForFreshLeadsMessage().catch(() => ({
+            message: "These are fresh leads that should be targeted today.\n\nTap on any of these to decide further course of action."
+          })),
+          fetchFreshLeads()
+        ]);
+
+        aiMessageEl.textContent =
+          aiResponse?.message ||
+          "These are fresh leads that should be targeted today.\n\nTap on any of these to decide further course of action.";
+
+        renderFreshLeads(freshLeads);
+      } catch (e) {
+        aiMessageEl.textContent = "Unable to load fresh leads right now.";
+        emptyStateEl.classList.add("show");
+        emptyStateEl.textContent = e.message || "Unable to load fresh leads.";
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      history.back();
+    });
+
+    initPage();
+  </script>
+</body>
+</html>
