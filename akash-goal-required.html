@@ -6,24 +6,110 @@
   <meta name="theme-color" content="#075E54"/>
   <title>Akash - Goal Required</title>
   <style>
-    :root{--bg:#e5ddd5;--card:#fff;--line:#2f3937;--btnbg:#d8eee4;--btnline:#8ea598;--text:#1f2d2a;--wa:#075E54}
+    :root{
+      --bg:#e5ddd5;
+      --card:#fff;
+      --line:#2f3937;
+      --btnbg:#d8eee4;
+      --btnline:#8ea598;
+      --text:#1f2d2a;
+      --wa:#075E54;
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    .header{position:fixed;top:0;left:0;right:0;background:var(--wa);color:#fff;padding:20px;font-weight:900;font-size:26px;z-index:10}
-    .page{max-width:1100px;margin:auto;padding:110px 18px 40px}
-    .advisorBox{width:320px;max-width:100%;margin:0 auto 38px;background:#fff;border:2px solid var(--line);border-radius:22px;text-align:center;padding:28px 18px;font-size:22px;font-weight:800}
-    .bigBox{background:#fff;border:2px solid var(--line);border-radius:34px;min-height:240px;padding:38px 30px;font-size:26px;line-height:1.55;max-width:100%;white-space:pre-wrap}
-    .btnRow{display:flex;justify-content:center;gap:60px;flex-wrap:wrap;margin-top:40px}
-    .btn{min-width:220px;padding:18px 24px;border:2px solid var(--btnline);border-radius:16px;background:var(--btnbg);font-size:20px;font-weight:900;color:#1f2d2a;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.08)}
-    .btn.aiBtn{display:none}
-    .btn.aiBtn.show{display:inline-block}
-    .busy{display:none;text-align:center;margin-top:16px;font-size:15px;font-weight:700;color:#45645d}
-    .busy.show{display:block}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .header{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      background:var(--wa);
+      color:#fff;
+      padding:20px;
+      font-weight:900;
+      font-size:26px;
+      z-index:10;
+    }
+    .page{
+      max-width:1100px;
+      margin:auto;
+      padding:110px 18px 40px;
+    }
+    .advisorBox{
+      width:320px;
+      max-width:100%;
+      margin:0 auto 38px;
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:22px;
+      text-align:center;
+      padding:28px 18px;
+      font-size:22px;
+      font-weight:800;
+    }
+    .bigBox{
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:34px;
+      min-height:240px;
+      padding:38px 30px;
+      font-size:26px;
+      line-height:1.55;
+      max-width:100%;
+    }
+    .btnRow{
+      display:flex;
+      justify-content:center;
+      gap:60px;
+      flex-wrap:wrap;
+      margin-top:40px;
+    }
+    .btn{
+      min-width:220px;
+      padding:18px 24px;
+      border:2px solid var(--btnline);
+      border-radius:16px;
+      background:var(--btnbg);
+      font-size:20px;
+      font-weight:900;
+      color:#1f2d2a;
+      cursor:pointer;
+      box-shadow:0 4px 0 rgba(0,0,0,.08);
+    }
+    .busy{
+      display:none;
+      text-align:center;
+      margin-top:18px;
+      font-size:15px;
+      font-weight:700;
+      color:#45645d;
+    }
+    .busy.show{
+      display:block;
+    }
     @media (max-width:700px){
-      .bigBox{font-size:18px;padding:24px 18px;border-radius:24px;min-height:unset}
-      .advisorBox{font-size:18px;padding:20px 14px}
-      .btnRow{gap:18px}
-      .btn{min-width:160px;font-size:18px}
+      .bigBox{
+        font-size:18px;
+        padding:24px 18px;
+        border-radius:24px;
+        min-height:unset;
+      }
+      .advisorBox{
+        font-size:18px;
+        padding:20px 14px;
+      }
+      .btnRow{
+        gap:18px;
+      }
+      .btn{
+        min-width:160px;
+        font-size:18px;
+      }
     }
   </style>
 </head>
@@ -37,15 +123,19 @@
       <div id="messageBox">Loading...</div>
     </div>
 
-    <div id="btnRow" class="btnRow"></div>
     <div id="busy" class="busy">Akash is thinking...</div>
+
+    <div class="btnRow">
+      <button id="goalBtn" class="btn">Goal Setting</button>
+      <button id="backBtn" class="btn">Back</button>
+    </div>
   </div>
 
   <script>
     const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
 
     const params = new URLSearchParams(window.location.search);
-    const advisorName = params.get("name") || "Advisor Name";
+    const advisorName = params.get("name") || params.get("advisorName") || "Advisor Name";
     const advisorId = params.get("advisorId") || params.get("userId") || "";
     const userName =
       params.get("userName") ||
@@ -59,7 +149,15 @@
       localStorage.getItem("akash_language") ||
       "english";
 
-    document.getElementById("advisorName").textContent = advisorName;
+    const advisorNameEl = document.getElementById("advisorName");
+    const messageBox = document.getElementById("messageBox");
+    const busy = document.getElementById("busy");
+
+    advisorNameEl.textContent = advisorName;
+
+    function setBusy(flag) {
+      busy.classList.toggle("show", !!flag);
+    }
 
     function buildUrl(page) {
       const url = new URL(page, window.location.href);
@@ -70,8 +168,26 @@
       return url.toString();
     }
 
-    function setBusy(flag) {
-      document.getElementById("busy").classList.toggle("show", !!flag);
+    function normalizeAIResponse(raw) {
+      let response = raw;
+
+      if (response && typeof response.output === "string") {
+        try {
+          response = JSON.parse(response.output);
+        } catch (e) {
+          response = { message: response.output };
+        }
+      }
+
+      if (!response || typeof response !== "object") {
+        response = {};
+      }
+
+      if (typeof response.message !== "string" || !response.message.trim()) {
+        response.message = "Goal setting for this advisor has not been completed yet. Please tap the button below to start goal setting.";
+      }
+
+      return response;
     }
 
     async function callAI(payload) {
@@ -89,63 +205,41 @@
       return res.json();
     }
 
-    function renderButtons(buttons) {
-      const btnRow = document.getElementById("btnRow");
-      btnRow.innerHTML = "";
-
-      (Array.isArray(buttons) ? buttons : []).forEach((btn, index) => {
-        const button = document.createElement("button");
-        button.className = "btn aiBtn";
-        button.textContent = btn.label || btn.value || "Continue";
-        button.onclick = () => handleButtonClick(btn.value || "");
-        btnRow.appendChild(button);
-
-        setTimeout(() => {
-          button.classList.add("show");
-        }, index * 180);
-      });
-    }
-
-    function handleButtonClick(value) {
-      if (value === "goal_setting") {
-        window.location.href = buildUrl("goal-setting.html");
-        return;
-      }
-
-      if (value === "back") {
-        history.back();
-        return;
-      }
-    }
-
-    async function initPage() {
+    async function loadGoalRequiredMessage() {
       try {
         setBusy(true);
 
         const response = await callAI({
-          stage: "goal-not-done",
+          pageType: "goal-not-done",
           language,
-          advisorName
+          advisorName,
+          advisorId,
+          userName,
+          leadName: "",
+          leadData: "",
+          selectedStatus: "",
+          messageBatchCount: 1
         });
 
-        document.getElementById("messageBox").textContent =
-          response.message || "Goal Setting is not yet done.";
-
-        renderButtons(response.buttons);
+        const normalized = normalizeAIResponse(response);
+        messageBox.textContent = normalized.message;
       } catch (e) {
-        document.getElementById("messageBox").textContent =
-          `Hi ${userName || "there"}! Goal Setting is not yet done.\n\nTap the Goal Setting button below to complete it.`;
-
-        renderButtons([
-          { label: "Goal Setting", value: "goal_setting" },
-          { label: "Back", value: "back" }
-        ]);
+        messageBox.textContent =
+          "Goal setting for this advisor has not been completed yet. Please tap the button below to start goal setting.";
       } finally {
         setBusy(false);
       }
     }
 
-    initPage();
+    document.getElementById("goalBtn").onclick = () => {
+      window.location.href = buildUrl("goal-setting.html");
+    };
+
+    document.getElementById("backBtn").onclick = () => {
+      history.back();
+    };
+
+    loadGoalRequiredMessage();
   </script>
 </body>
 </html>
