@@ -159,8 +159,8 @@ async function loadMessages(){
 
     console.log("AI Response:", data);
 
-    const msgs = Array.isArray(data.suggestedMessages)
-      ? data.suggestedMessages
+    const msgs = Array.isArray(data.output?.suggestedMessages)
+      ? data.output.suggestedMessages
       : [];
 
     renderMessages(msgs);
