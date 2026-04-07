@@ -4,11 +4,13 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="theme-color" content="#075E54"/>
-  <title>Lead Actions</title>
+  <title>Customized Message</title>
   <style>
     :root{
       --wa:#075E54;
       --bg:#e5ddd5;
+      --card:#ffffff;
+      --botBubble:#dcf8c6;
       --btn1:#d8eee4;
       --btnBorder:#8ea598;
       --text:#1f2d2a;
@@ -33,58 +35,98 @@
     }
     .wrap{
       padding-top:110px;
-      max-width:1100px;
+      max-width:900px;
       margin:0 auto;
       min-height:100vh;
       display:flex;
       flex-direction:column;
-      align-items:center;
-      gap:28px;
+      gap:20px;
       padding-left:18px;
       padding-right:18px;
       padding-bottom:40px;
     }
     .nameCard{
-      margin-top:12px;
+      align-self:center;
       background:#fff;
       border:2px solid var(--btnBorder);
       border-radius:22px;
       min-width:320px;
       max-width:100%;
-      padding:26px 24px;
+      padding:22px 24px;
       text-align:center;
       font-size:20px;
       font-weight:800;
     }
-    .aiMessage{
+    .chatArea{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
       width:100%;
-      max-width:760px;
-      background:#fff;
+    }
+    .botBubble{
+      align-self:flex-start;
+      max-width:82%;
+      background:var(--botBubble);
       border:2px solid var(--btnBorder);
-      border-radius:22px;
-      padding:22px 20px;
-      font-size:22px;
+      border-radius:18px 18px 18px 6px;
+      padding:18px 18px;
+      font-size:20px;
       line-height:1.5;
-      font-weight:500;
+      font-weight:700;
       white-space:pre-wrap;
+      box-shadow:0 3px 0 rgba(0,0,0,.05);
+    }
+    .msgWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-self:flex-start;
+      width:min(82%, 760px);
+    }
+    .msgCard{
+      background:var(--card);
+      border:2px solid var(--btnBorder);
+      border-radius:18px 18px 18px 6px;
+      padding:18px 18px;
+      font-size:18px;
+      line-height:1.55;
+      white-space:pre-wrap;
+      box-shadow:0 3px 0 rgba(0,0,0,.05);
+    }
+    .msgActions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .miniBtn{
+      min-width:130px;
+      border:2px solid var(--btnBorder);
+      border-radius:14px;
+      background:var(--btn1);
+      color:var(--text);
+      font-weight:800;
+      font-size:15px;
+      padding:12px 14px;
+      cursor:pointer;
+      box-shadow:0 3px 0 rgba(0,0,0,.05);
     }
     .busy{
       display:none;
       font-size:15px;
       font-weight:700;
       color:#45645d;
+      text-align:center;
     }
     .busy.show{display:block;}
-    .btnGrid{
-      width:100%;
-      max-width:980px;
-      display:grid;
-      grid-template-columns:repeat(5, minmax(150px, 1fr));
-      gap:18px 22px;
-      align-items:center;
+    .bottomRow{
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:12px;
     }
     .actionBtn{
-      width:100%;
+      min-width:180px;
       border:2px solid var(--btnBorder);
       border-radius:18px;
       background:var(--btn1);
@@ -95,32 +137,25 @@
       cursor:pointer;
       box-shadow:0 4px 0 rgba(0,0,0,.06);
     }
-    .actionBtn:active{
+    .actionBtn:active,
+    .miniBtn:active{
       transform:translateY(1px);
-      box-shadow:0 3px 0 rgba(0,0,0,.06);
-    }
-    @media (max-width:1100px){
-      .btnGrid{
-        grid-template-columns:repeat(3, minmax(150px, 1fr));
-      }
     }
     @media (max-width:760px){
       .nameCard{
         min-width:0;
         width:100%;
       }
-      .aiMessage{
+      .botBubble,
+      .msgWrap{
+        width:100%;
+        max-width:100%;
+      }
+      .botBubble{
         font-size:18px;
       }
-      .btnGrid{
-        grid-template-columns:repeat(2, minmax(140px, 1fr));
-        max-width:420px;
-      }
-    }
-    @media (max-width:480px){
-      .btnGrid{
-        grid-template-columns:1fr;
-        max-width:320px;
+      .msgCard{
+        font-size:17px;
       }
     }
   </style>
@@ -130,20 +165,20 @@
 
   <div class="wrap">
     <div id="leadNameCard" class="nameCard">Lead Name</div>
-    <div id="aiMessage" class="aiMessage">Akash is thinking...</div>
-    <div id="busy" class="busy">Akash is thinking...</div>
 
-    <div class="btnGrid">
-      <button id="marketingBtn" class="actionBtn">Marketing Material</button>
-      <button id="customBtn" class="actionBtn">Customized Message</button>
-      <button id="callBtn" class="actionBtn">Call</button>
-      <button id="statusBtn" class="actionBtn">Lead Status</button>
+    <div class="chatArea">
+      <div id="introBubble" class="botBubble">Here are your Icebreaking Messages</div>
+      <div id="busy" class="busy">Akash is preparing message suggestions...</div>
+      <div id="messagesContainer"></div>
+    </div>
+
+    <div class="bottomRow">
+      <button id="moreBtn" class="actionBtn">More</button>
       <button id="backBtn" class="actionBtn">Back</button>
     </div>
   </div>
 
   <script>
-    const AKASH_API_BASE = "https://api.tarachatbots.in";
     const AKASH_AI_WEBHOOK = "https://api.tarachatbots.in/api/akash-ai";
 
     const params = new URLSearchParams(window.location.search);
@@ -203,10 +238,14 @@
       "";
 
     const leadNameCard = document.getElementById("leadNameCard");
-    const aiMessageEl = document.getElementById("aiMessage");
     const busyEl = document.getElementById("busy");
+    const introBubble = document.getElementById("introBubble");
+    const messagesContainer = document.getElementById("messagesContainer");
 
     leadNameCard.textContent = leadName;
+
+    let messageBatchCount = 1;
+    let allMessages = [];
 
     function setBusy(flag) {
       busyEl.classList.toggle("show", !!flag);
@@ -227,13 +266,63 @@
       return res.json();
     }
 
-    async function loadAIMessage() {
+    function renderMessages() {
+      messagesContainer.innerHTML = "";
+
+      allMessages.forEach((message, index) => {
+        const wrap = document.createElement("div");
+        wrap.className = "msgWrap";
+
+        const card = document.createElement("div");
+        card.className = "msgCard";
+        card.textContent = message;
+
+        const actions = document.createElement("div");
+        actions.className = "msgActions";
+
+        const shareBtn = document.createElement("button");
+        shareBtn.className = "miniBtn";
+        shareBtn.textContent = "Share";
+        shareBtn.onclick = async () => {
+          try {
+            if (navigator.share) {
+              await navigator.share({ text: message });
+            } else {
+              await navigator.clipboard.writeText(message);
+              alert("Message copied. You can paste and share it.");
+            }
+          } catch (e) {}
+        };
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "miniBtn";
+        copyBtn.textContent = "Copy Message";
+        copyBtn.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(message);
+            alert("Message copied.");
+          } catch (e) {
+            alert("Unable to copy message.");
+          }
+        };
+
+        actions.appendChild(shareBtn);
+        actions.appendChild(copyBtn);
+
+        wrap.appendChild(card);
+        wrap.appendChild(actions);
+
+        messagesContainer.appendChild(wrap);
+      });
+    }
+
+    async function loadInitialMessages() {
       try {
         setBusy(true);
 
         const response = await callAI({
-          stage: "lead-action-page",
-          pageType: "lead-action-page",
+          stage: "customized-action-page",
+          pageType: "customized-action-page",
           language,
           advisorName,
           advisorId,
@@ -248,41 +337,72 @@
             email: selectedLead.email || ""
           }),
           selectedStatus: selectedLead.status || "",
-          messageBatchCount: 1
+          messageBatchCount
         });
 
-        aiMessageEl.textContent =
-          response.message ||
-          `You are now viewing ${leadName}. Please choose the next action.`;
+        introBubble.textContent =
+          response.message || "Here are your Icebreaking Messages";
+
+        const messages = Array.isArray(response.suggestedMessages)
+          ? response.suggestedMessages
+          : [];
+
+        allMessages = messages.slice(0, 3);
+        renderMessages();
       } catch (e) {
-        aiMessageEl.textContent =
-          `You are now viewing ${leadName}. Please choose the next action.`;
+        introBubble.textContent = "Here are your Icebreaking Messages";
+        allMessages = [];
+        renderMessages();
       } finally {
         setBusy(false);
       }
     }
 
-    document.getElementById("marketingBtn").addEventListener("click", () => {
-      alert("Marketing Material page/function to be connected next.");
-    });
+    async function loadOneMoreMessage() {
+      try {
+        setBusy(true);
+        messageBatchCount += 1;
 
-    document.getElementById("customBtn").addEventListener("click", () => {
-      alert("Customized Message page/function to be connected next.");
-    });
+        const response = await callAI({
+          stage: "customized-action-page",
+          pageType: "customized-action-page",
+          language,
+          advisorName,
+          advisorId,
+          userName,
+          leadName,
+          leadData: JSON.stringify({
+            leadId,
+            leadSource,
+            tier: selectedLead.tier || "",
+            status: selectedLead.status || "",
+            phone: selectedLead.phone || "",
+            email: selectedLead.email || ""
+          }),
+          selectedStatus: selectedLead.status || "",
+          messageBatchCount
+        });
 
-    document.getElementById("callBtn").addEventListener("click", () => {
-      alert("Call function to be connected next.");
-    });
+        const messages = Array.isArray(response.suggestedMessages)
+          ? response.suggestedMessages
+          : [];
 
-    document.getElementById("statusBtn").addEventListener("click", () => {
-      alert("Lead Status page/function to be connected next.");
-    });
+        const nextMessage = messages.find(msg => msg && !allMessages.includes(msg));
 
-    document.getElementById("backBtn").addEventListener("click", () => {
-      history.back();
-    });
+        if (nextMessage) {
+          allMessages.push(nextMessage);
+          renderMessages();
+        }
+      } catch (e) {
+      } finally {
+        setBusy(false);
+      }
+    }
 
-    loadAIMessage();
+    document.getElementById("moreBtn").addEventListener("click", loadOneMoreMessage);
+    document.getElementById("backBtn").addEventListener("click", () => history.back());
+
+    loadInitialMessages();
   </script>
 </body>
 </html>
