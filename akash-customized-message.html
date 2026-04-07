@@ -77,18 +77,15 @@ body{
 <div class="header">Akash at your Service</div>
 
 <div class="wrap">
+  <div class="chatHeader">Here are your Icebreaking Messages</div>
 
-<div class="chatHeader">Here are your Icebreaking Messages</div>
+  <div id="loading" class="loading">Generating messages...</div>
+  <div id="messagesContainer"></div>
 
-<div id="loading" class="loading">Generating messages...</div>
-
-<div id="messagesContainer"></div>
-
-<div class="bottom">
-<button id="moreBtn" class="btn">More</button>
-<button id="backBtn" class="btn">Back</button>
-</div>
-
+  <div class="bottom">
+    <button id="moreBtn" class="btn">More</button>
+    <button id="backBtn" class="btn">Back</button>
+  </div>
 </div>
 
 <script>
@@ -127,10 +124,14 @@ function renderMessages(messages){
     div.innerHTML = `
       <div>${msg}</div>
       <div class="btnRow">
-        <button class="btn" onclick="copyMsg(\`${msg}\`)">Copy</button>
-        <button class="btn" onclick="shareMsg(\`${msg}\`)">Share</button>
+        <button class="btn">Copy</button>
+        <button class="btn">Share</button>
       </div>
     `;
+
+    const buttons = div.querySelectorAll(".btn");
+    buttons[0].onclick = () => copyMsg(msg);
+    buttons[1].onclick = () => shareMsg(msg);
 
     container.appendChild(div);
   });
@@ -159,13 +160,24 @@ async function loadMessages(){
 
     console.log("AI Response:", data);
 
-    const msgs = Array.isArray(data.output?.suggestedMessages)
-      ? data.output.suggestedMessages
-      : [];
+    // ✅ HANDLE ALL POSSIBLE STRUCTURES
+    const raw = Array.isArray(data) ? data[0]?.json : data;
+
+    const msgs =
+      raw?.output?.suggestedMessages ||
+      raw?.suggestedMessages ||
+      [];
+
+    if (!msgs.length){
+      document.getElementById("messagesContainer").innerHTML =
+        "<div class='msg'>No messages generated</div>";
+      return;
+    }
 
     renderMessages(msgs);
 
   }catch(e){
+    console.error(e);
     alert("Error loading messages");
   }finally{
     document.getElementById("loading").style.display = "none";
@@ -175,6 +187,7 @@ async function loadMessages(){
 document.getElementById("moreBtn").onclick = loadMessages;
 document.getElementById("backBtn").onclick = () => history.back();
 
+// Initial load
 loadMessages();
 
 </script>
