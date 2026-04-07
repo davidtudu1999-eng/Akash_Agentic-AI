@@ -1,196 +1,239 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="theme-color" content="#075E54"/>
-<title>Customized Messages</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#075E54"/>
+  <title>Customized Message</title>
 
-<style>
-:root{
-  --wa:#075E54;
-  --bg:#e5ddd5;
-  --card:#fff;
-  --border:#8ea598;
-  --btn:#d8eee4;
-}
-body{
-  margin:0;
-  font-family:system-ui;
-  background:var(--bg);
-}
-.header{
-  position:fixed;
-  top:0;left:0;right:0;
-  background:var(--wa);
-  color:#fff;
-  padding:18px;
-  font-size:24px;
-  font-weight:900;
-}
-.wrap{
-  padding-top:100px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:15px;
-}
-.chatHeader{
-  background:#dcf8c6;
-  padding:14px;
-  border-radius:12px;
-  font-weight:800;
-}
-.msg{
-  background:#fff;
-  border:2px solid var(--border);
-  padding:14px;
-  border-radius:14px;
-  width:90%;
-  max-width:600px;
-}
-.btnRow{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-.btn{
-  background:var(--btn);
-  border:2px solid var(--border);
-  padding:8px 12px;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
-}
-.bottom{
-  margin-top:20px;
-}
-.loading{
-  font-weight:700;
-  color:#45645d;
-}
-</style>
-</head>
-
-<body>
-
-<div class="header">Akash at your Service</div>
-
-<div class="wrap">
-  <div class="chatHeader">Here are your Icebreaking Messages</div>
-
-  <div id="loading" class="loading">Generating messages...</div>
-  <div id="messagesContainer"></div>
-
-  <div class="bottom">
-    <button id="moreBtn" class="btn">More</button>
-    <button id="backBtn" class="btn">Back</button>
-  </div>
-</div>
-
-<script>
-
-const AI_URL = "https://api.tarachatbots.in/api/akash-ai";
-
-const params = new URLSearchParams(window.location.search);
-
-const leadName = params.get("leadName") || "";
-const advisorName = params.get("name") || "";
-const advisorId = params.get("advisorId") || "";
-const userName = params.get("userName") || "";
-const language = params.get("language") || localStorage.getItem("akash_language") || "english";
-
-function copyMsg(text){
-  navigator.clipboard.writeText(text);
-  alert("Copied");
-}
-
-function shareMsg(text){
-  if (navigator.share){
-    navigator.share({ text });
-  } else {
-    alert("Sharing not supported");
-  }
-}
-
-function renderMessages(messages){
-  const container = document.getElementById("messagesContainer");
-  container.innerHTML = "";
-
-  messages.forEach(msg => {
-    const div = document.createElement("div");
-    div.className = "msg";
-
-    div.innerHTML = `
-      <div>${msg}</div>
-      <div class="btnRow">
-        <button class="btn">Copy</button>
-        <button class="btn">Share</button>
-      </div>
-    `;
-
-    const buttons = div.querySelectorAll(".btn");
-    buttons[0].onclick = () => copyMsg(msg);
-    buttons[1].onclick = () => shareMsg(msg);
-
-    container.appendChild(div);
-  });
-}
-
-async function loadMessages(){
-  try{
-    document.getElementById("loading").style.display = "block";
-
-    const res = await fetch(AI_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        pageType:"customized-action-page",
-        stage:"customized-action-page",
-        language,
-        leadName,
-        advisorName,
-        advisorId,
-        userName,
-        messageBatchCount:1
-      })
-    });
-
-    const data = await res.json();
-
-    console.log("AI Response:", data);
-
-    // ✅ HANDLE ALL POSSIBLE STRUCTURES
-    const raw = Array.isArray(data) ? data[0]?.json : data;
-
-    const msgs =
-      raw?.output?.suggestedMessages ||
-      raw?.suggestedMessages ||
-      [];
-
-    if (!msgs.length){
-      document.getElementById("messagesContainer").innerHTML =
-        "<div class='msg'>No messages generated</div>";
-      return;
+  <style>
+    :root{
+      --wa:#075E54;
+      --bg:#e5ddd5;
+      --card:#ffffff;
+      --border:#8ea598;
+      --btn:#d8eee4;
+      --chat:#dcf8c6;
+      --text:#1f2d2a;
     }
 
-    renderMessages(msgs);
+    *{box-sizing:border-box}
 
-  }catch(e){
-    console.error(e);
-    alert("Error loading messages");
-  }finally{
-    document.getElementById("loading").style.display = "none";
-  }
-}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
 
-document.getElementById("moreBtn").onclick = loadMessages;
-document.getElementById("backBtn").onclick = () => history.back();
+    .header{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      z-index:1000;
+      background:var(--wa);
+      color:#fff;
+      padding:18px 20px;
+      font-size:24px;
+      font-weight:900;
+    }
 
-// Initial load
-loadMessages();
+    .wrap{
+      padding-top:100px;
+      padding-left:16px;
+      padding-right:16px;
+      padding-bottom:40px;
+      max-width:900px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:18px;
+    }
 
-</script>
+    .chatHeader{
+      width:100%;
+      max-width:640px;
+      background:var(--chat);
+      border-radius:16px;
+      padding:16px 20px;
+      font-size:18px;
+      font-weight:800;
+      text-align:center;
+    }
+
+    .msg{
+      width:100%;
+      max-width:640px;
+      background:var(--card);
+      border:2px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 2px 0 rgba(0,0,0,.04);
+    }
+
+    .msgText{
+      white-space:pre-wrap;
+      line-height:1.55;
+      font-size:18px;
+    }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .btn{
+      background:var(--btn);
+      border:2px solid var(--border);
+      border-radius:12px;
+      padding:10px 14px;
+      font-size:15px;
+      font-weight:800;
+      color:var(--text);
+      cursor:pointer;
+    }
+
+    .bottom{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:6px;
+    }
+
+    .loading{
+      font-size:15px;
+      font-weight:700;
+      color:#45645d;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">Akash at your Service</div>
+
+  <div class="wrap">
+    <div class="chatHeader">Here are your Icebreaking Messages</div>
+
+    <div id="loading" class="loading">Generating message...</div>
+
+    <div id="messagesContainer"></div>
+
+    <div class="bottom">
+      <button id="moreBtn" class="btn">More</button>
+      <button id="backBtn" class="btn">Back</button>
+    </div>
+  </div>
+
+  <script>
+    const AI_URL = "https://api.tarachatbots.in/api/akash-ai";
+
+    const params = new URLSearchParams(window.location.search);
+
+    const leadName = params.get("leadName") || "";
+    const advisorName = params.get("name") || "";
+    const advisorId = params.get("advisorId") || "";
+    const userName = params.get("userName") || "";
+    const language = params.get("language") || localStorage.getItem("akash_language") || "english";
+
+    let messageBatchCount = 1;
+
+    function copyMsg(text){
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Message copied"))
+        .catch(() => alert("Copy failed"));
+    }
+
+    function shareMsg(text){
+      if (navigator.share){
+        navigator.share({ text }).catch(() => {});
+      } else {
+        alert("Sharing not supported on this device");
+      }
+    }
+
+    function addMessageToUI(text){
+      const container = document.getElementById("messagesContainer");
+
+      const div = document.createElement("div");
+      div.className = "msg";
+
+      const textDiv = document.createElement("div");
+      textDiv.className = "msgText";
+      textDiv.textContent = text;
+
+      const actions = document.createElement("div");
+      actions.className = "btnRow";
+
+      const shareBtn = document.createElement("button");
+      shareBtn.className = "btn";
+      shareBtn.textContent = "Share";
+      shareBtn.onclick = () => shareMsg(text);
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "btn";
+      copyBtn.textContent = "Copy Message";
+      copyBtn.onclick = () => copyMsg(text);
+
+      actions.appendChild(shareBtn);
+      actions.appendChild(copyBtn);
+
+      div.appendChild(textDiv);
+      div.appendChild(actions);
+
+      container.prepend(div);
+    }
+
+    async function loadMessage(){
+      try{
+        document.getElementById("loading").style.display = "block";
+
+        const res = await fetch(AI_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pageType: "customized-action-page",
+            stage: "customized-action-page",
+            language,
+            leadName,
+            advisorName,
+            advisorId,
+            userName,
+            messageBatchCount
+          })
+        });
+
+        const data = await res.json();
+        console.log("AI RAW:", data);
+
+        const text = data.message || "";
+
+        if (!text) {
+          alert("No message generated");
+          return;
+        }
+
+        addMessageToUI(text);
+        messageBatchCount += 1;
+
+      } catch (e) {
+        console.error("Load error:", e);
+        alert("Error loading message");
+      } finally {
+        document.getElementById("loading").style.display = "none";
+      }
+    }
+
+    document.getElementById("moreBtn").onclick = loadMessage;
+    document.getElementById("backBtn").onclick = () => history.back();
+
+    loadMessage();
+  </script>
 
 </body>
 </html>
