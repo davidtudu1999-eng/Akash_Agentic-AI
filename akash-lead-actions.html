@@ -4,13 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="theme-color" content="#075E54"/>
-  <title>Customized Message</title>
+  <title>Lead Actions</title>
   <style>
     :root{
       --wa:#075E54;
       --bg:#e5ddd5;
-      --card:#ffffff;
-      --botBubble:#dcf8c6;
       --btn1:#d8eee4;
       --btnBorder:#8ea598;
       --text:#1f2d2a;
@@ -35,98 +33,58 @@
     }
     .wrap{
       padding-top:110px;
-      max-width:900px;
+      max-width:1100px;
       margin:0 auto;
       min-height:100vh;
       display:flex;
       flex-direction:column;
-      gap:20px;
+      align-items:center;
+      gap:28px;
       padding-left:18px;
       padding-right:18px;
       padding-bottom:40px;
     }
     .nameCard{
-      align-self:center;
+      margin-top:12px;
       background:#fff;
       border:2px solid var(--btnBorder);
       border-radius:22px;
       min-width:320px;
       max-width:100%;
-      padding:22px 24px;
+      padding:26px 24px;
       text-align:center;
       font-size:20px;
       font-weight:800;
     }
-    .chatArea{
-      display:flex;
-      flex-direction:column;
-      gap:16px;
+    .aiMessage{
       width:100%;
-    }
-    .botBubble{
-      align-self:flex-start;
-      max-width:82%;
-      background:var(--botBubble);
+      max-width:760px;
+      background:#fff;
       border:2px solid var(--btnBorder);
-      border-radius:18px 18px 18px 6px;
-      padding:18px 18px;
-      font-size:20px;
+      border-radius:22px;
+      padding:22px 20px;
+      font-size:22px;
       line-height:1.5;
-      font-weight:700;
+      font-weight:500;
       white-space:pre-wrap;
-      box-shadow:0 3px 0 rgba(0,0,0,.05);
-    }
-    .msgWrap{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      align-self:flex-start;
-      width:min(82%, 760px);
-    }
-    .msgCard{
-      background:var(--card);
-      border:2px solid var(--btnBorder);
-      border-radius:18px 18px 18px 6px;
-      padding:18px 18px;
-      font-size:18px;
-      line-height:1.55;
-      white-space:pre-wrap;
-      box-shadow:0 3px 0 rgba(0,0,0,.05);
-    }
-    .msgActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .miniBtn{
-      min-width:130px;
-      border:2px solid var(--btnBorder);
-      border-radius:14px;
-      background:var(--btn1);
-      color:var(--text);
-      font-weight:800;
-      font-size:15px;
-      padding:12px 14px;
-      cursor:pointer;
-      box-shadow:0 3px 0 rgba(0,0,0,.05);
     }
     .busy{
       display:none;
       font-size:15px;
       font-weight:700;
       color:#45645d;
-      text-align:center;
     }
     .busy.show{display:block;}
-    .bottomRow{
-      display:flex;
-      gap:18px;
-      flex-wrap:wrap;
-      justify-content:center;
-      margin-top:12px;
+    .btnGrid{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns:repeat(5, minmax(150px, 1fr));
+      gap:18px 22px;
+      align-items:center;
     }
     .actionBtn{
-      min-width:180px;
+      width:100%;
       border:2px solid var(--btnBorder);
       border-radius:18px;
       background:var(--btn1);
@@ -137,25 +95,32 @@
       cursor:pointer;
       box-shadow:0 4px 0 rgba(0,0,0,.06);
     }
-    .actionBtn:active,
-    .miniBtn:active{
+    .actionBtn:active{
       transform:translateY(1px);
+      box-shadow:0 3px 0 rgba(0,0,0,.06);
+    }
+    @media (max-width:1100px){
+      .btnGrid{
+        grid-template-columns:repeat(3, minmax(150px, 1fr));
+      }
     }
     @media (max-width:760px){
       .nameCard{
         min-width:0;
         width:100%;
       }
-      .botBubble,
-      .msgWrap{
-        width:100%;
-        max-width:100%;
-      }
-      .botBubble{
+      .aiMessage{
         font-size:18px;
       }
-      .msgCard{
-        font-size:17px;
+      .btnGrid{
+        grid-template-columns:repeat(2, minmax(140px, 1fr));
+        max-width:420px;
+      }
+    }
+    @media (max-width:480px){
+      .btnGrid{
+        grid-template-columns:1fr;
+        max-width:320px;
       }
     }
   </style>
@@ -165,15 +130,14 @@
 
   <div class="wrap">
     <div id="leadNameCard" class="nameCard">Lead Name</div>
+    <div id="aiMessage" class="aiMessage">Akash is thinking...</div>
+    <div id="busy" class="busy">Akash is thinking...</div>
 
-    <div class="chatArea">
-      <div id="introBubble" class="botBubble">Here are your Icebreaking Messages</div>
-      <div id="busy" class="busy">Akash is preparing message suggestions...</div>
-      <div id="messagesContainer"></div>
-    </div>
-
-    <div class="bottomRow">
-      <button id="moreBtn" class="actionBtn">More</button>
+    <div class="btnGrid">
+      <button id="marketingBtn" class="actionBtn">Marketing Material</button>
+      <button id="customBtn" class="actionBtn">Customized Message</button>
+      <button id="callBtn" class="actionBtn">Call</button>
+      <button id="statusBtn" class="actionBtn">Lead Status</button>
       <button id="backBtn" class="actionBtn">Back</button>
     </div>
   </div>
@@ -238,14 +202,10 @@
       "";
 
     const leadNameCard = document.getElementById("leadNameCard");
+    const aiMessageEl = document.getElementById("aiMessage");
     const busyEl = document.getElementById("busy");
-    const introBubble = document.getElementById("introBubble");
-    const messagesContainer = document.getElementById("messagesContainer");
 
     leadNameCard.textContent = leadName;
-
-    let messageBatchCount = 1;
-    let allMessages = [];
 
     function setBusy(flag) {
       busyEl.classList.toggle("show", !!flag);
@@ -266,63 +226,13 @@
       return res.json();
     }
 
-    function renderMessages() {
-      messagesContainer.innerHTML = "";
-
-      allMessages.forEach((message, index) => {
-        const wrap = document.createElement("div");
-        wrap.className = "msgWrap";
-
-        const card = document.createElement("div");
-        card.className = "msgCard";
-        card.textContent = message;
-
-        const actions = document.createElement("div");
-        actions.className = "msgActions";
-
-        const shareBtn = document.createElement("button");
-        shareBtn.className = "miniBtn";
-        shareBtn.textContent = "Share";
-        shareBtn.onclick = async () => {
-          try {
-            if (navigator.share) {
-              await navigator.share({ text: message });
-            } else {
-              await navigator.clipboard.writeText(message);
-              alert("Message copied. You can paste and share it.");
-            }
-          } catch (e) {}
-        };
-
-        const copyBtn = document.createElement("button");
-        copyBtn.className = "miniBtn";
-        copyBtn.textContent = "Copy Message";
-        copyBtn.onclick = async () => {
-          try {
-            await navigator.clipboard.writeText(message);
-            alert("Message copied.");
-          } catch (e) {
-            alert("Unable to copy message.");
-          }
-        };
-
-        actions.appendChild(shareBtn);
-        actions.appendChild(copyBtn);
-
-        wrap.appendChild(card);
-        wrap.appendChild(actions);
-
-        messagesContainer.appendChild(wrap);
-      });
-    }
-
-    async function loadInitialMessages() {
+    async function loadAIMessage() {
       try {
         setBusy(true);
 
         const response = await callAI({
-          stage: "customized-action-page",
-          pageType: "customized-action-page",
+          stage: "lead-action-page",
+          pageType: "lead-action-page",
           language,
           advisorName,
           advisorId,
@@ -337,72 +247,53 @@
             email: selectedLead.email || ""
           }),
           selectedStatus: selectedLead.status || "",
-          messageBatchCount
+          messageBatchCount: 1
         });
 
-        introBubble.textContent =
-          response.message || "Here are your Icebreaking Messages";
-
-        const messages = Array.isArray(response.suggestedMessages)
-          ? response.suggestedMessages
-          : [];
-
-        allMessages = messages.slice(0, 3);
-        renderMessages();
+        aiMessageEl.textContent =
+          response.message ||
+          `You are now viewing ${leadName}. Please choose the next action.`;
       } catch (e) {
-        introBubble.textContent = "Here are your Icebreaking Messages";
-        allMessages = [];
-        renderMessages();
+        aiMessageEl.textContent =
+          `You are now viewing ${leadName}. Please choose the next action.`;
       } finally {
         setBusy(false);
       }
     }
 
-    async function loadOneMoreMessage() {
-      try {
-        setBusy(true);
-        messageBatchCount += 1;
-
-        const response = await callAI({
-          stage: "customized-action-page",
-          pageType: "customized-action-page",
-          language,
-          advisorName,
-          advisorId,
-          userName,
-          leadName,
-          leadData: JSON.stringify({
-            leadId,
-            leadSource,
-            tier: selectedLead.tier || "",
-            status: selectedLead.status || "",
-            phone: selectedLead.phone || "",
-            email: selectedLead.email || ""
-          }),
-          selectedStatus: selectedLead.status || "",
-          messageBatchCount
-        });
-
-        const messages = Array.isArray(response.suggestedMessages)
-          ? response.suggestedMessages
-          : [];
-
-        const nextMessage = messages.find(msg => msg && !allMessages.includes(msg));
-
-        if (nextMessage) {
-          allMessages.push(nextMessage);
-          renderMessages();
-        }
-      } catch (e) {
-      } finally {
-        setBusy(false);
-      }
+    function buildUrl(page) {
+      const url = new URL(page, window.location.href);
+      url.searchParams.set("name", advisorName);
+      if (advisorId) url.searchParams.set("advisorId", advisorId);
+      if (userName) url.searchParams.set("userName", userName);
+      if (language) url.searchParams.set("language", language);
+      if (leadId) url.searchParams.set("leadId", leadId);
+      if (leadName) url.searchParams.set("leadName", leadName);
+      if (leadSource) url.searchParams.set("leadSource", leadSource);
+      return url.toString();
     }
 
-    document.getElementById("moreBtn").addEventListener("click", loadOneMoreMessage);
-    document.getElementById("backBtn").addEventListener("click", () => history.back());
+    document.getElementById("marketingBtn").addEventListener("click", () => {
+      alert("Marketing Material page/function to be connected next.");
+    });
 
-    loadInitialMessages();
+    document.getElementById("customBtn").addEventListener("click", () => {
+      window.location.href = buildUrl("akash-customized-message.html");
+    });
+
+    document.getElementById("callBtn").addEventListener("click", () => {
+      alert("Call function to be connected next.");
+    });
+
+    document.getElementById("statusBtn").addEventListener("click", () => {
+      alert("Lead Status page/function to be connected next.");
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      history.back();
+    });
+
+    loadAIMessage();
   </script>
 </body>
 </html>
