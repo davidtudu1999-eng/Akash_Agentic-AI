@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#075E54"/>
+<title>Customized Messages</title>
+
+<style>
+:root{
+  --wa:#075E54;
+  --bg:#e5ddd5;
+  --card:#fff;
+  --border:#8ea598;
+  --btn:#d8eee4;
+}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:var(--bg);
+}
+.header{
+  position:fixed;
+  top:0;left:0;right:0;
+  background:var(--wa);
+  color:#fff;
+  padding:18px;
+  font-size:24px;
+  font-weight:900;
+}
+.wrap{
+  padding-top:100px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:15px;
+}
+.chatHeader{
+  background:#dcf8c6;
+  padding:14px;
+  border-radius:12px;
+  font-weight:800;
+}
+.msg{
+  background:#fff;
+  border:2px solid var(--border);
+  padding:14px;
+  border-radius:14px;
+  width:90%;
+  max-width:600px;
+}
+.btnRow{
+  display:flex;
+  gap:10px;
+}
+.btn{
+  background:var(--btn);
+  border:2px solid var(--border);
+  padding:8px 12px;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.bottom{
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">Akash at your Service</div>
+
+<div class="wrap">
+
+<div class="chatHeader">Here are your Icebreaking Messages</div>
+
+<div id="msg1" class="msg"></div>
+<div id="msg2" class="msg"></div>
+<div id="msg3" class="msg"></div>
+
+<div class="bottom">
+<button id="moreBtn" class="btn">More</button>
+<button id="backBtn" class="btn">Back</button>
+</div>
+
+</div>
+
+<script>
+
+const AI_URL = "https://api.tarachatbots.in/api/akash-ai";
+
+const params = new URLSearchParams(window.location.search);
+
+const leadName = params.get("leadName") || "";
+const advisorName = params.get("name") || "";
+const advisorId = params.get("advisorId") || "";
+const userName = params.get("userName") || "";
+const language = params.get("language") || "english";
+
+async function loadMessages() {
+  const res = await fetch(AI_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      pageType:"customized-action-page",
+      language,
+      leadName,
+      advisorName,
+      advisorId,
+      userName
+    })
+  });
+
+  const data = await res.json();
+
+  const msgs = data.suggestedMessages || [];
+
+  document.getElementById("msg1").innerText = msgs[0] || "";
+  document.getElementById("msg2").innerText = msgs[1] || "";
+  document.getElementById("msg3").innerText = msgs[2] || "";
+}
+
+loadMessages();
+
+document.getElementById("moreBtn").onclick = loadMessages;
+document.getElementById("backBtn").onclick = () => history.back();
+
+</script>
+
+</body>
+</html>
