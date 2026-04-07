@@ -52,6 +52,7 @@ body{
 .btnRow{
   display:flex;
   gap:10px;
+  margin-top:10px;
 }
 .btn{
   background:var(--btn);
@@ -64,6 +65,10 @@ body{
 .bottom{
   margin-top:20px;
 }
+.loading{
+  font-weight:700;
+  color:#45645d;
+}
 </style>
 </head>
 
@@ -75,9 +80,9 @@ body{
 
 <div class="chatHeader">Here are your Icebreaking Messages</div>
 
-<div id="msg1" class="msg"></div>
-<div id="msg2" class="msg"></div>
-<div id="msg3" class="msg"></div>
+<div id="loading" class="loading">Generating messages...</div>
+
+<div id="messagesContainer"></div>
 
 <div class="bottom">
 <button id="moreBtn" class="btn">More</button>
@@ -96,35 +101,81 @@ const leadName = params.get("leadName") || "";
 const advisorName = params.get("name") || "";
 const advisorId = params.get("advisorId") || "";
 const userName = params.get("userName") || "";
-const language = params.get("language") || "english";
+const language = params.get("language") || localStorage.getItem("akash_language") || "english";
 
-async function loadMessages() {
-  const res = await fetch(AI_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      pageType:"customized-action-page",
-      language,
-      leadName,
-      advisorName,
-      advisorId,
-      userName
-    })
-  });
-
-  const data = await res.json();
-
-  const msgs = data.suggestedMessages || [];
-
-  document.getElementById("msg1").innerText = msgs[0] || "";
-  document.getElementById("msg2").innerText = msgs[1] || "";
-  document.getElementById("msg3").innerText = msgs[2] || "";
+function copyMsg(text){
+  navigator.clipboard.writeText(text);
+  alert("Copied");
 }
 
-loadMessages();
+function shareMsg(text){
+  if (navigator.share){
+    navigator.share({ text });
+  } else {
+    alert("Sharing not supported");
+  }
+}
+
+function renderMessages(messages){
+  const container = document.getElementById("messagesContainer");
+  container.innerHTML = "";
+
+  messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = "msg";
+
+    div.innerHTML = `
+      <div>${msg}</div>
+      <div class="btnRow">
+        <button class="btn" onclick="copyMsg(\`${msg}\`)">Copy</button>
+        <button class="btn" onclick="shareMsg(\`${msg}\`)">Share</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+async function loadMessages(){
+  try{
+    document.getElementById("loading").style.display = "block";
+
+    const res = await fetch(AI_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        pageType:"customized-action-page",
+        stage:"customized-action-page",
+        language,
+        leadName,
+        advisorName,
+        advisorId,
+        userName,
+        messageBatchCount:1
+      })
+    });
+
+    const data = await res.json();
+
+    console.log("AI Response:", data);
+
+    const msgs = Array.isArray(data.suggestedMessages)
+      ? data.suggestedMessages
+      : [];
+
+    renderMessages(msgs);
+
+  }catch(e){
+    alert("Error loading messages");
+  }finally{
+    document.getElementById("loading").style.display = "none";
+  }
+}
 
 document.getElementById("moreBtn").onclick = loadMessages;
 document.getElementById("backBtn").onclick = () => history.back();
+
+loadMessages();
 
 </script>
 
